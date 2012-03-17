@@ -1,6 +1,8 @@
 #OS
 [Tt]humbs.db
 *.DS_Store
+.Spotlight-V100
+.Trashes
 
 #Visual Studio
 *.suo
