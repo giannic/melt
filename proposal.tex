@@ -1,0 +1,58 @@
+\documentclass[pdftex,12pt]{article}
+\usepackage{amsfonts,amssymb,amsmath}
+\usepackage[hmargin=2cm, top=2cm, bottom=3.5cm]{geometry}
+\usepackage{titling}
+    \setlength{\droptitle}{-50pt}
+    \posttitle{\par\end{center}}
+\usepackage{titlesec}
+    \titleformat{\section}
+        {\large\bfseries}{}{0pt}{}
+    \titleformat{\subsection}
+        {\normalsize\bfseries}{}{0pt}{}
+\linespread{1.2}
+\parindent 0pt
+
+\title{Physically Based Melting\\with Smoothed-particle Hydrodynamics}
+\author{Gianni Chen \and Kanchalai Suveepattananont}
+\date{\small March 19, 2012}
+
+\begin{document}
+\maketitle
+
+\section{Problem Description and Motivation}
+We explored the Marker-and-Cell method for fluid simulation in our smoke simulation project. In this project, we will further explore fluid simulation using Smoothed-particle Hydrodynamics starting with the melting of homogeneous materials, such as ice. In particular, we are interested in an accurate representation of chemical properties of these materials. We think this can be best observed between their solid and liquid phases. If time permits, we will research and extend our simulation to the melting of heterogeneous materials. \\
+
+The motivation for our project is both academic and personal. If successful in implementing the functionality for the melting of homogeneous materials, we aim to construct some insight into the behavior of heterogeneous materials. We think this will further improve realism in animated movies and be a nice show piece for our demo reels.
+
+\section{Approach}
+Our implementation will be mainly based on the "Fast Particle-based Visual Simulation of Ice Melting" paper, a Smoothed-particle Hydrodynamics approach. We will implement the constraint systems as well as heat transfers between particles. We will also set up the structures for primitives and arbitrarily shaped objects for melting. Our code will be hosted as a public repository on Github.
+
+    \subsection{Libraries and Code}
+    Eigen (linear algebra and tensor math) \\
+    Fluid V2 by Rama Hoetzlein (base)
+
+    \subsection{References}
+    R. Bridson, M. Fischer, "Fluid Simulation SIGGRAPH 2007 Course Notes," SIGGRAPH Course (SIGGRAPH 2007). \\\\
+    K. Iwasaki, H. Uchida, Y.Dobashi, T. Nishita, "Fast Particle-based Visual Simulation of Ice Melting," Computer Graphics Forum (PG 2010). \\\\
+    A. Paiva, F Petronetto, T. Lewiner, G. Tavares, "Particle-based non-Newtonian fluid animation for melting objects," XIX Brazilian Symposium on Computer Graphics and Image Processing (SIBGRAPI 2006). \\\\
+    D. Terzopoulos, J. Platt, K. Fleischer, "Heating and melting deformable models," The Journal of Visualization and Computer Animation (1991).
+
+\section{Timeline}
+    \subsection{First Stage}
+    At the bare minimum, we will set up the constraints of our particle system and simulate interactions with a basic heat transfer model. As well we will support primitive shapes such as cube and sphere in our demo scenes.
+    \subsection{Second Stage}
+    We expect to fully implement the melting of homogeneous materials and be able to apply its calculations to arbitrary shaped objects. To enhance the realism, we plan to render our results in Maya.
+    \subsection{Third Stage}
+    If all goes well, we will attempt the melting of heterogeneous materials. Because previous papers focused primarily on the melting of homogeneous materials, we want to observe the visual effects caused by the interaction of particles with different properties and phase changes.
+
+\pagebreak
+\section{Work Division}
+We will set up and implement the constraint systems as a group to kick off the project. Then, we will divide the work into the implementation of inter-facial tension, heat transfer, setting up of primitives and arbitrary shaped objects and porting to maya. We will use a greedy paradigm to assign tasks as they are completed by reducing this problem to the largest non-overlapping set of activity selection problem.
+
+\section{Summary}
+Through implementing physically accurate melting, we will learn a new simulation method, Smoothed-particle Hydrodynamics, and its associated constraint systems. We will also learn about the heat transfer system and its interaction with the constraints. Finally, we will explore the interaction between particles, their behaviors at different phases, and how these reflect in the simulation. On the side, we expect to struggle with the tools in porting to maya.
+
+\section{Extra}
+The base code for our implementation will be Hoetzlein's fluid simulation (Fluid V2), but we will be drawing inspiration from Leftheris (Terry) Kaleas's code as well. 
+
+\end{document}
