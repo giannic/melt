@@ -20,12 +20,14 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 
+#include <assert.h>
 #include <time.h>
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "include\fps.h"
 #include "common_defs.h"
 
 #ifdef BUILD_CUDA
@@ -40,9 +42,13 @@
 	#include <GL/glut.h>	
 #endif
 
+#include <IL/il.h>
+#include <IL/ilu.h>
+#include <IL/ilut.h>
+
 bool bTiming = false;
 bool bRec = false;
-int mFrame = 0;
+//int mFrame = 0;
 
 // Globals
 FluidSystem			psys;
@@ -97,6 +103,13 @@ GLuint	depth_id;
 GLuint screenBufferObject;
 GLuint depthBufferObject;
 GLuint envid;
+
+// FPS
+mmc::FpsTracker fps_tracker;
+
+//Recording Param
+bool is_recording = false;
+int frame;
 
 void drawScene ( float* viewmat, bool bShade )
 {
@@ -206,6 +219,11 @@ void draw2D ()
 		vol = psys.GetVec ( PLANE_GRAV_DIR );
 		sprintf ( disp,	"Gravity:               %3.2f %3.2f %3.2f", vol.x, vol.y, vol.z );	drawText ( 20, 330,  disp );
 	}
+	char info[1024];
+	sprintf(info, "FPS: %3.1f %s",
+		fps_tracker.fpsAverage(),
+		is_recording ? "(Recording ON)" : "");
+	drawText ( 10, window_height - 10, info );
 }
 
 void computeFromPositions ()
@@ -236,13 +254,53 @@ void computeView ()
 	glPopMatrix ();
 }	
 
-int frame;
+void grabScreen()  
+{
+    unsigned int image;
+    ilGenImages(1, &image);
+    ilBindImage(image);
+
+    ILenum error = ilGetError();
+    assert(error == IL_NO_ERROR);
+
+    ilTexImage(640, 480, 1, 3, IL_RGB, IL_UNSIGNED_BYTE, NULL);
+
+    error = ilGetError();
+    assert(error == IL_NO_ERROR);
+
+    unsigned char* data = ilGetData();
+
+    error = ilGetError();
+    assert(error == IL_NO_ERROR);
+
+    for (int i=479; i>=0; i--) 
+    {
+	    glReadPixels(0,i,640,1,GL_RGB, GL_UNSIGNED_BYTE, 
+		    data + (640 * 3 * i));
+    }
+
+    char anim_filename[2048];
+    sprintf_s(anim_filename, 2048, "output/%04d.png", frame); 
+
+    ilSave(IL_PNG, anim_filename);
+
+    error = ilGetError();
+    assert(error == IL_NO_ERROR);
+
+    ilDeleteImages(1, &image);
+
+    error = ilGetError();
+    assert(error == IL_NO_ERROR);
+}
 
 void display () 
 {
 	mint::Time start, stop;	
-
-//	iso = sin(frame*0.01f );
+	fps_tracker.timestamp();
+	
+	if (is_recording) {
+		grabScreen();
+	}
 	
 	// Do simulation!
 	if ( !bPause ) psys.Run ();
@@ -369,6 +427,12 @@ void keyboard_func ( unsigned char key, int x, int y )
 		psys.SetParam ( PNT_DRAWMODE, d );
 		} break;	
 	case 's': case 'S':	if ( ++iShade > 2 ) iShade = 0;		break;
+	case 't': case 'T': 
+		is_recording = !is_recording;
+		if (is_recording) {
+			frame = 0;
+		}
+		break;
 	case 27:			    exit( 0 ); break;
 	
 	case '`':
@@ -505,6 +569,11 @@ void idle_func ()
 
 void init ()
 {
+	// FPS
+	ilInit();
+    iluInit();
+    ilEnable(IL_FILE_OVERWRITE);
+    ilutRenderer(ILUT_OPENGL);
 	
 	glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);	
 	glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);	

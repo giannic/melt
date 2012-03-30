@@ -4,6 +4,7 @@
 	Version="9.00"
 	Name="fluids"
 	ProjectGUID="{F9F0795D-4C39-41F4-9381-25C616D69FB2}"
+	RootNamespace="fluids"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
 	>
@@ -125,7 +126,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="fluids;common"
+				AdditionalIncludeDirectories="fluids;common;DevIL1.6.7\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;FREEGLUT_STATIC"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -146,10 +147,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="glee_2008.lib freeglut_VS2008.lib"
+				AdditionalDependencies="glee_2008.lib freeglut_VS2008.lib DevIL.lib ilu.lib ilut.lib"
 				OutputFile="$(OutDir)/fluids.exe"
 				LinkIncremental="1"
-				IgnoreDefaultLibraryNames="libcmtd.lib"
+				AdditionalLibraryDirectories="DevIL1.6.7\lib"
+				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="false"
 				SubSystem="1"
 				OptimizeReferences="0"
@@ -293,7 +295,23 @@
 			</File>
 		</Filter>
 		<File
+			RelativePath=".\include\clock.h"
+			>
+		</File>
+		<File
+			RelativePath=".\include\fps.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\include\fps.h"
+			>
+		</File>
+		<File
 			RelativePath=".\main.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\include\timer.h"
 			>
 		</File>
 	</Files>
