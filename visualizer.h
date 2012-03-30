@@ -14,9 +14,8 @@ public:
 
     static void draw_bound();
 private:
-    static const int V_SIZE = 72;
-    static const int C_SIZE = 72;
-    static const float vertices[V_SIZE];
-    static const float colors[C_SIZE];
+    static const int SIZE = 72;
+    static const float vertices[SIZE];
+    static const float colors[SIZE];
 };
 #endif

@@ -114,7 +114,6 @@ int frame;
 
 void drawScene ( float* viewmat, bool bShade )
 {
-    glClear(GL_COLOR_BUFFER_BIT);
     Visualizer::draw_bound();
 
 	if ( iShade <= 1 && bShade ) {		
@@ -278,8 +277,7 @@ void grabScreen()
     error = ilGetError();
     assert(error == IL_NO_ERROR);
 
-    for (int i=479; i>=0; i--) 
-    {
+    for (int i=479; i>=0; i--) {
 	    glReadPixels(0,i,640,1,GL_RGB, GL_UNSIGNED_BYTE, 
 		    data + (640 * 3 * i));
     }
@@ -651,7 +649,7 @@ int main ( int argc, char **argv )
 	glutInitWindowSize( (int) window_width, (int) window_height );
 	glutCreateWindow ( "Fluids v.1 (c) 2008, R. Hoetzlein (ZLib)" );
 
-//	glutFullScreen ();
+	//glutFullScreen ();
  
 	// initialize parameters
 	init();
