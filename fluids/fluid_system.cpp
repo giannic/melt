@@ -42,6 +42,11 @@
 
 FluidSystem::FluidSystem ()
 {
+    volmin_x = -20; volmin_y = -20; volmin_z = 0;
+	volmax_x = 20; volmax_y = 20; volmax_z = 80;
+
+	initmin_x = 0; initmin_y = 0; initmin_z = 0;
+	initmax_x = 20; initmax_y = 20; initmax_z = 20;
 }
 
 void FluidSystem::Initialize ( int mode, int total )
@@ -93,7 +98,7 @@ void FluidSystem::Reset ( int nmax )
 	m_Param [ SPH_EXTSTIFF ] = 20000;
 	m_Param [ SPH_SMOOTHRADIUS ] = 0.01;
 	
-	m_Vec [ POINT_GRAV_POS ].Set ( 0, 0, 50 );
+	m_Vec [ POINT_GRAV_POS ].Set ( 0, 0, 0 );
 	m_Vec [ PLANE_GRAV_DIR ].Set ( 0, 0, -9.8 );
 	m_Vec [ EMIT_POS ].Set ( 0, 0, 0 );
 	m_Vec [ EMIT_RATE ].Set ( 0, 0, 0 );
@@ -463,136 +468,17 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax )
 	Reset ( nmax );
 	
 	switch ( n ) {
-	case 0:		// Wave pool
-				
-		//-- TEST CASE: 2x2x2 grid, 32 particles.  NOTE: Set PRADIUS to 0.0004 to reduce wall influence
-		//     grid 0:    3*3*2 = 18 particles
-		//     grid 1,2:  3*1*2 =  6 particles
-		//     grid 3:    1*1*2 =  2 particles
-		//     grid 4,5,6:    0 =  0 particles
-		/*m_Vec [ SPH_VOLMIN ].Set ( -2.5, -2.5, 0 );
-		m_Vec [ SPH_VOLMAX ].Set ( 2.5, 2.5, 5.0 );	
-		m_Vec [ SPH_INITMIN ].Set ( -2.5, -2.5, 0 );	
-		m_Vec [ SPH_INITMAX ].Set ( 2.5, 2.5, 1.6 );*/  
-		
-		m_Vec [ SPH_VOLMIN ].Set ( -30, -30, 0 );
-		m_Vec [ SPH_VOLMAX ].Set ( 30, 30, 40 );		
+	case 0:		// Wave pool	
+		// Basic cube	
+	    m_Vec [ SPH_VOLMIN ].Set ( volmin_x, volmin_y, volmin_z );
+		m_Vec [ SPH_VOLMAX ].Set ( volmax_x, volmax_y, volmax_z);	
 
-		//m_Vec [ SPH_INITMIN ].Set ( -5, -5, 10 );
-		//m_Vec [ SPH_INITMAX ].Set ( 5, 5, 20 );
 		
-		m_Vec [ SPH_INITMIN ].Set ( -20, -26, 10 );
-		m_Vec [ SPH_INITMAX ].Set ( 20, 26, 40 );
-
-		m_Param [ FORCE_XMIN_SIN ] = 12.0;
-		m_Param [ BOUND_ZMIN_SLOPE ] = 0.05;
-		break;
-	case 1:		// Dam break
-		m_Vec [ SPH_VOLMIN ].Set ( -30, -14, 0 );
-		m_Vec [ SPH_VOLMAX ].Set ( 30, 14, 60 );
-		m_Vec [ SPH_INITMIN ].Set ( 0, -13, 0 );
-		m_Vec [ SPH_INITMAX ].Set ( 29, 13, 30 );		
-		m_Vec [ PLANE_GRAV_DIR ].Set ( 0.0, 0, -9.8 );
-		break;
-	case 2:		// Dual-Wave pool
-		m_Vec [ SPH_VOLMIN ].Set ( -60, -5, 0 );
-		m_Vec [ SPH_VOLMAX ].Set ( 60, 5, 50 );
-		m_Vec [ SPH_INITMIN ].Set ( -46, -5, 0 );
-		m_Vec [ SPH_INITMAX ].Set ( 46, 5, 15 );
-		m_Param [ FORCE_XMIN_SIN ] = 8.0;
-		m_Param [ FORCE_XMAX_SIN ] = 8.0;
-		m_Vec [ PLANE_GRAV_DIR ].Set ( 0.0, 0, -9.8 );
-		break;
-	case 3:		// Swirl Stream
-		m_Vec [ SPH_VOLMIN ].Set ( -30, -30, 0 );
-		m_Vec [ SPH_VOLMAX ].Set ( 30, 30, 50 );
-		m_Vec [ SPH_INITMIN ].Set ( -30, -30, 0 );
-		m_Vec [ SPH_INITMAX ].Set ( 30, 30, 40 );
-		m_Vec [ EMIT_POS ].Set ( -20, -20, 22 );
-		m_Vec [ EMIT_RATE ].Set ( 1, 4, 0 );
-		m_Vec [ EMIT_ANG ].Set ( 0, 120, 1.5 );
-		m_Vec [ EMIT_DANG ].Set ( 0, 0, 0 );
-		m_Vec [ PLANE_GRAV_DIR ].Set ( 0.0, 0, -9.8 );
-		break;
-	case 4:		// Shockwave
-		m_Vec [ SPH_VOLMIN ].Set ( -60, -15, 0 );
-		m_Vec [ SPH_VOLMAX ].Set ( 60, 15, 50 );
-		m_Vec [ SPH_INITMIN ].Set ( -59, -14, 0 );
-		m_Vec [ SPH_INITMAX ].Set ( 59, 14, 30 );
-		m_Vec [ PLANE_GRAV_DIR ].Set ( 0.0, 0, -9.8 );
-		m_Toggle [ WALL_BARRIER ] = true;
-		m_Toggle [ WRAP_X ] = true;
-		break;
-	case 5:		// Zero gravity
-		m_Vec [ SPH_VOLMIN ].Set ( -40, -40, 0 );
-		m_Vec [ SPH_VOLMAX ].Set ( 40, 40, 50 );
-		m_Vec [ SPH_INITMIN ].Set ( -20, -20, 20 );
-		m_Vec [ SPH_INITMAX ].Set ( 20, 20, 40 );
-		m_Vec [ EMIT_POS ].Set ( -20, 0, 40 );
-		m_Vec [ EMIT_RATE ].Set ( 2, 1, 0 );		
-		m_Vec [ EMIT_ANG ].Set ( 0, 120, 0.25 );
-		m_Vec [ PLANE_GRAV_DIR ].Set ( 0, 0, 0 );
-		m_Param [ SPH_INTSTIFF ] = 0.20;		
-		break;
-	case 6:		// Point gravity		
-		m_Vec [ SPH_VOLMIN ].Set ( -40, -40, 0 );
-		m_Vec [ SPH_VOLMAX ].Set ( 40, 40, 50 );
-		m_Vec [ SPH_INITMIN ].Set ( -20, -20, 20 );
-		m_Vec [ SPH_INITMAX ].Set ( 20, 20, 40 );
-		m_Param [ SPH_INTSTIFF ] = 0.50;		
-		m_Vec [ EMIT_POS ].Set ( -20, 20, 25 );
-		m_Vec [ EMIT_RATE ].Set ( 1, 4, 0 );		
-		m_Vec [ EMIT_ANG ].Set ( -20, 100, 2.0 );
-		m_Vec [ POINT_GRAV_POS ].Set ( 0, 0, 25 );
-		m_Vec [ PLANE_GRAV_DIR ].Set ( 0, 0, 0 );
-		m_Param [ POINT_GRAV ] = 3.5;
-		break;
-	case 7:		// Levy break
-		m_Vec [ SPH_VOLMIN ].Set ( -40, -40, 0 );
-		m_Vec [ SPH_VOLMAX ].Set ( 40, 40, 50 );
-		m_Vec [ SPH_INITMIN ].Set ( 10, -40, 0 );
-		m_Vec [ SPH_INITMAX ].Set ( 40, 40, 50 );
-		m_Vec [ EMIT_POS ].Set ( 34, 27, 16.6 );
-		m_Vec [ EMIT_RATE ].Set ( 2, 9, 0 );		
-		m_Vec [ EMIT_ANG ].Set ( 118, 200, 1.0 );
-		m_Toggle [ LEVY_BARRIER ] = true;
-		m_Param [ BOUND_ZMIN_SLOPE ] = 0.1;
-		m_Vec [ PLANE_GRAV_DIR ].Set ( 0.0, 0, -9.8 );
-		break;
-	case 8:		// Drain
-		m_Vec [ SPH_VOLMIN ].Set ( -20, -20, 0 );
-		m_Vec [ SPH_VOLMAX ].Set ( 20, 20, 50 );
-		m_Vec [ SPH_INITMIN ].Set ( -15, -20, 20 );
-		m_Vec [ SPH_INITMAX ].Set ( 20, 20, 50 );
-		m_Vec [ EMIT_POS ].Set ( -16, -16, 30 );
-		m_Vec [ EMIT_RATE ].Set ( 1, 4, 0 );		
-		m_Vec [ EMIT_ANG ].Set ( -20, 140, 1.8 );
-		m_Toggle [ DRAIN_BARRIER ] = true;
-		m_Vec [ PLANE_GRAV_DIR ].Set ( 0.0, 0, -9.8 );
-		break;
-	case 9:			// Tumbler
-		m_Vec [ SPH_VOLMIN ].Set ( -30, -30, 0 );
-		m_Vec [ SPH_VOLMAX ].Set ( 30, 30, 50 );
-		m_Vec [ SPH_INITMIN ].Set ( 24, -29, 20 );
-		m_Vec [ SPH_INITMAX ].Set ( 29, 29, 40 );
-		m_Param [ SPH_VISC ] = 0.1;		
-		m_Param [ SPH_INTSTIFF ] = 0.50;
-		m_Param [ SPH_EXTSTIFF ] = 8000;
-		//m_Param [ SPH_SMOOTHRADIUS ] = 0.01;
-		m_Param [ BOUND_ZMIN_SLOPE ] = 0.4;
-		m_Param [ FORCE_XMIN_SIN ] = 12.00;
-		m_Vec [ PLANE_GRAV_DIR ].Set ( 0.0, 0, -9.8 );
-		break;	
-	case 10:		// Large sim
-		m_Vec [ SPH_VOLMIN ].Set ( -35, -35, 0 );
-		m_Vec [ SPH_VOLMAX ].Set ( 35, 35, 60 );
-		m_Vec [ SPH_INITMIN ].Set ( -5, -35, 0 );
-		m_Vec [ SPH_INITMAX ].Set ( 30, 0, 60 );
-		m_Vec [ PLANE_GRAV_DIR ].Set ( 0.0, 0, -9.8 );
+		m_Vec [ SPH_INITMIN ].Set ( initmin_x, initmin_y, initmin_z);
+		m_Vec [ SPH_INITMAX ].Set ( initmax_x, initmax_y, initmax_z);
 		break;
 	}	
 
-	SPH_ComputeKernels ();
 
 	m_Param [ SPH_SIMSIZE ] = m_Param [ SPH_SIMSCALE ] * (m_Vec[SPH_VOLMAX].z - m_Vec[SPH_VOLMIN].z);
 	m_Param [ SPH_PDIST ] = pow ( m_Param[SPH_PMASS] / m_Param[SPH_RESTDENSITY], 1/3.0 );	
