@@ -205,6 +205,14 @@
 				RelativePath=".\fluids\fluid_system.h"
 				>
 			</File>
+			<File
+				RelativePath=".\visualizer.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\visualizer.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="common"
@@ -294,24 +302,28 @@
 				>
 			</File>
 		</Filter>
-		<File
-			RelativePath=".\include\clock.h"
+		<Filter
+			Name="include"
 			>
-		</File>
-		<File
-			RelativePath=".\include\fps.cpp"
-			>
-		</File>
-		<File
-			RelativePath=".\include\fps.h"
-			>
-		</File>
+			<File
+				RelativePath=".\include\clock.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\fps.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\include\fps.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\timer.h"
+				>
+			</File>
+		</Filter>
 		<File
 			RelativePath=".\main.cpp"
-			>
-		</File>
-		<File
-			RelativePath=".\include\timer.h"
 			>
 		</File>
 	</Files>

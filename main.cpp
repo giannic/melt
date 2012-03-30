@@ -27,8 +27,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "include\fps.h"
 #include "common_defs.h"
+#include "include\fps.h"
+#include "visualizer.h"
 
 #ifdef BUILD_CUDA
 	#include "fluid_system_host.cuh"	
@@ -113,6 +114,9 @@ int frame;
 
 void drawScene ( float* viewmat, bool bShade )
 {
+    glClear(GL_COLOR_BUFFER_BIT);
+    Visualizer::draw_bound();
+
 	if ( iShade <= 1 && bShade ) {		
 		glEnable ( GL_LIGHT0 );
 		GLfloat diff[4];
@@ -125,8 +129,8 @@ void drawScene ( float* viewmat, bool bShade )
 		glMaterialfv (GL_FRONT_AND_BACK, GL_SPECULAR, &spec[0]);
 		glMaterialfv (GL_FRONT_AND_BACK, GL_SHININESS, &shininess);		
 		glColorMaterial ( GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE );
-
-		glColor3f ( 1, 1, 1 );
+        
+		glColor3f ( 1.0f, 1.0f, 1.0f );
 		glLoadMatrixf ( viewmat );
 		glBegin ( GL_QUADS );
 		glNormal3f ( 0, 0, 1 );
@@ -143,11 +147,12 @@ void drawScene ( float* viewmat, bool bShade )
 			glVertex3f ( n,  100, 0.1 );
 		}
 		glEnd ();
-
+        //Visualizer::draw_bound();
 		psys.Draw ( &viewmat[0], 0.8 );				// Draw particles		
 
 	} else {
 		glDisable ( GL_LIGHTING );
+       // Visualizer::draw_bound();
 		psys.Draw ( &viewmat[0], 0.55 );			// Draw particles
 	}
 }
