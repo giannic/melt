@@ -424,15 +424,19 @@ void mouse_move_func ( int x, int y )
 			if ( cam_angs.x < 0 )		cam_angs.x += 360.0;
 			if ( cam_angs.y >= 180.0 )	cam_angs.y = 180.0;
 			if ( cam_angs.y <= -180.0 )	cam_angs.y = -180.0;
+/*
 			printf ( "Cam Ang: %f %f %f\n", cam_angs.x, cam_angs.y, cam_angs.z );
 			printf ( "Cam To:  %f %f %f\n", cam_to.x, cam_to.y, cam_to.z );
 			printf ( "Cam FOV: %f\n", cam_fov);
+*/
 		} else if ( dragging == DRAG_RIGHT ) {
 			cam_angs.z += dy*.15;
 			if ( cam_angs.z < 0)		cam_angs.z = 0;
+/*
 			printf ( "Cam Ang: %f %f %f\n", cam_angs.x, cam_angs.y, cam_angs.z );
 			printf ( "Cam To:  %f %f %f\n", cam_to.x, cam_to.y, cam_to.z );
 			printf ( "Cam FOV: %f\n", cam_fov );
+*/
 		}
 		break;
 	case MODE_CAM_TO:
