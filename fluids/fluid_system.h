@@ -72,6 +72,11 @@
 
 	class FluidSystem : public PointSet {
 	public:
+		float volmin_x, volmin_y, volmin_z;
+		float volmax_x, volmax_y, volmax_z;
+
+		float initmin_x, initmin_y, initmin_z;
+		float initmax_x, initmax_y, initmax_z;
 		FluidSystem ();
 
 		// Basic Particle System

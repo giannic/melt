@@ -3,9 +3,9 @@
 
 #include "gl_helper.h"
 
-#define hx 30.0 //half size
-#define hy 30.0
-#define hz 30.0
+#define hx 20.0 //half size
+#define hy 20.0
+#define hz 40.0
 
 class Visualizer {
 

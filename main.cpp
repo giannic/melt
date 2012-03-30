@@ -58,7 +58,6 @@ float window_width  = 1024;
 float window_height = 768;
 
 Vector3DF	cam_from, cam_angs, cam_to;			// Camera stuff
-Vector3DF	obj_from, obj_angs, obj_dang;
 Vector3DF	light[2], light_to[2];				// Light stuff
 float		light_fov, cam_fov;	
 
@@ -364,13 +363,6 @@ void reshape ( int width, int height )
   glViewport( 0, 0, width, height );  
 }
 
-void UpdateEmit ()
-{	
-	obj_from = psys.GetVec ( EMIT_POS );
-	obj_angs = psys.GetVec ( EMIT_ANG );
-	obj_dang = psys.GetVec ( EMIT_RATE );
-}
-
 
 void keyboard_func ( unsigned char key, int x, int y )
 {
@@ -385,40 +377,12 @@ void keyboard_func ( unsigned char key, int x, int y )
 		if ( psys_nmax < 64 ) psys_nmax = 64;		
 		psys.SPH_CreateExample ( psys_demo, psys_nmax );
 		} break;
-	case '0':
-		UpdateEmit ();
-		psys_freq++;	
-		psys.SetVec ( EMIT_RATE, Vector3DF(psys_freq, psys_rate, 0) );
-		break;  
-	case '9':
-		UpdateEmit ();
-		psys_freq--;  if ( psys_freq < 0 ) psys_freq = 0;
-		psys.SetVec ( EMIT_RATE, Vector3DF(psys_freq, psys_rate, 0) );
-		break;
-	case '.': case '>':
-		UpdateEmit ();
-		if ( ++psys_rate > 100 ) psys_rate = 100;
-		psys.SetVec ( EMIT_RATE, Vector3DF(psys_freq, psys_rate, 0) );
-		break;
-	case ',': case '<':
-		UpdateEmit ();
-		if ( --psys_rate < 0 ) psys_rate = 0;
-		psys.SetVec ( EMIT_RATE, Vector3DF(psys_freq, psys_rate, 0) );
-	break;
 	case 'g': case 'G':	psys.Toggle ( USE_CUDA );	break;
 	case 'f': case 'F':	mode = MODE_DOF;	break;
 
 	case 'z': case 'Z':	mode = MODE_CAM_TO;	break;
 	case 'c': case 'C':	mode = MODE_CAM;	break; 
 	case 'h': case 'H':	bHelp = !bHelp; break;
-	case 'i': case 'I':	
-		UpdateEmit ();
-		mode = MODE_OBJPOS;	
-		break;
-	case 'o': case 'O':	
-		UpdateEmit ();
-		mode = MODE_OBJ;
-		break;  
 	case 'x': case 'X':
 		if ( ++iClrMode > 2) iClrMode = 0;
 		psys.SetParam ( CLR_MODE, iClrMode );
@@ -451,13 +415,11 @@ void keyboard_func ( unsigned char key, int x, int y )
 		psys_demo--;
 		if (psys_demo < 0 ) psys_demo = 10;
 		psys.SPH_CreateExample ( psys_demo, psys_nmax );
-		UpdateEmit ();
 		break;
 	case ']':
 		psys_demo++;
 		if (psys_demo > 10 ) psys_demo = 0;
 		psys.SPH_CreateExample ( psys_demo, psys_nmax );
-		UpdateEmit ();
 		break;  
 	default:
 	break;
@@ -515,31 +477,6 @@ void mouse_move_func ( int x, int y )
 			if ( cam_to.z < 0) 	cam_to.z = 0;
 		}
 		break;	
-	case MODE_OBJ:
-		if ( dragging == DRAG_LEFT ) {
-			obj_angs.x -= dx*0.1;
-			obj_angs.y += dy*0.1;
-			printf ( "Obj Angs:  %f %f %f\n", obj_angs.x, obj_angs.y, obj_angs.z );
-			//force_x += dx*.1;
-			//force_y += dy*.1;
-		} else if (dragging == DRAG_RIGHT) {
-			obj_angs.z -= dy*.005;			
-			printf ( "Obj Angs:  %f %f %f\n", obj_angs.x, obj_angs.y, obj_angs.z );
-		}
-		psys.SetVec ( EMIT_ANG, Vector3DF ( obj_angs.x, obj_angs.y, obj_angs.z ) );
-		break;
-	case MODE_OBJPOS:
-		if ( dragging == DRAG_LEFT ) {
-			obj_from.x -= dx*.1;
-			obj_from.y += dy*.1;
-			printf ( "Obj:  %f %f %f\n", obj_from.x, obj_from.y, obj_from.z );
-		} else if (dragging == DRAG_RIGHT) {
-			obj_from.z -= dy*.1;
-			printf ( "Obj:  %f %f %f\n", obj_from.x, obj_from.y, obj_from.z );
-		}
-		psys.SetVec ( EMIT_POS, Vector3DF ( obj_from.x, obj_from.y, obj_from.z ) );
-		//psys.setPos ( obj_x, obj_y, obj_z, obj_ang, obj_tilt, obj_dist );
-		break;
 	case MODE_LIGHTPOS:
 		if ( dragging == DRAG_LEFT ) {
 			light[0].x -= dx*.1;
@@ -621,14 +558,8 @@ void init ()
 		setShadowLightColor ( .7, .7, .7, 0.2, 0.2, 0.2 );		
 	#endif
 
-	obj_from.x = 0;		obj_from.y = 0;		obj_from.z = 20;		// emitter
-	obj_angs.x = 118.7;	obj_angs.y = 200;	obj_angs.z = 1.0;
-	obj_dang.x = 1;	obj_dang.y = 1;		obj_dang.z = 0;
-
 	psys.Initialize ( BFLUID, psys_nmax );
 	psys.SPH_CreateExample ( 0, psys_nmax );
-	psys.SetVec ( EMIT_ANG, Vector3DF ( obj_angs.x, obj_angs.y, obj_angs.z ) );
-	psys.SetVec ( EMIT_POS, Vector3DF ( obj_from.x, obj_from.y, obj_from.z ) );
 
 	psys.SetParam ( PNT_DRAWMODE, int(bPntDraw ? 1:0) );
 	psys.SetParam ( CLR_MODE, iClrMode );	
