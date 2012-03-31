@@ -114,7 +114,7 @@ int FluidSystem::AddPoint ()
 	f->next = 0x0;
 	f->pressure = 0;
 	f->density = 0;
-    f->temp = 0;
+    f->temp = 0.2;
     f->state = 0;
     f->mass = 0; // mucho problem?
 	return ndx;
@@ -134,7 +134,7 @@ int FluidSystem::AddPointReuse ()
 	f->vel_eval.Set(0,0,0);
 	f->next = 0x0;
 	f->pressure = 0;
-	f->density = 0;
+	f->density = 0; 
 	return ndx;
 }
 
@@ -170,7 +170,7 @@ void FluidSystem::Run ()
 			//if ( bTiming) { stop.SetSystemTime ( ACC_NSEC ); stop = stop - start; printf ( "PRESS: %s\n", stop.GetReadableTime().c_str() ); }
 
 			start.SetSystemTime ( ACC_NSEC );
-			SPH_ComputeForceGridNC ();		
+			SPH_ComputeForceGridNC ();
 			//if ( bTiming) { stop.SetSystemTime ( ACC_NSEC ); stop = stop - start; printf ( "FORCE: %s\n", stop.GetReadableTime().c_str() ); }
 
 			start.SetSystemTime ( ACC_NSEC );
@@ -353,33 +353,30 @@ void FluidSystem::Advance ()
 			float v = p->temp;
 			float vmin = 0.0;
 			float vmax = 1.0;
-				float red = 1.0f;
-	float green = 1.0f;
-	float blue = 1.0f;
-	float alpha = 1.0f;
-	float dv;
 
-	if (v < vmin)
-	  v = vmin;
-	if (v > vmax)
-	  v = vmax;
-	dv = vmax - vmin;
+            float rgba[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+            float dv;
 
-	if (v < (vmin + 0.25 * dv)) {
-	  red = 0.0;
-	  green = 4 * (v - vmin) / dv;
-	} else if (v < (vmin + 0.5 * dv)) {
-	  red = 0.0;
-	  blue = 1.0 + 4.0 * (vmin + 0.25 * dv - v) / dv;
-	} else if (v < (vmin + 0.75 * dv)) {
-	  red = 4.0 * (v - vmin - 0.5 * dv) / dv;
-	  blue = 0.0;
-	} else {
-	  green = 1.0 + 4.0 * (vmin + 0.75 * dv - v) / dv;
-	  blue = 0.0;
-	}
-	p->clr = COLORA(red,green,blue,alpha);
+            if (v < vmin)
+                v = vmin;
+            if (v > vmax)
+                v = vmax;
+            dv = vmax - vmin;
 
+            if (v < (vmin + 0.25 * dv)) {
+                rgba[0] = 0.0;
+                rgba[1] = 4 * (v - vmin) / dv;
+            } else if (v < (vmin + 0.5 * dv)) {
+                rgba[0] = 0.0;
+                rgba[2] = 1.0 + 4.0 * (vmin + 0.25 * dv - v) / dv;
+            } else if (v < (vmin + 0.75 * dv)) {
+                rgba[0] = 4.0 * (v - vmin - 0.5 * dv) / dv;
+                rgba[2] = 0.0;
+            } else {
+                rgba[1] = 1.0 + 4.0 * (vmin + 0.75 * dv - v) / dv;
+                rgba[2] = 0.0;
+            }
+            p->clr = COLORA(rgba[0], rgba[1], rgba[2], rgba[3]);
         }
 
 		// Euler integration -------------------------------
@@ -395,7 +392,7 @@ void FluidSystem::Advance ()
 		if ( m_Toggle[WRAP_X] ) {
 			diff = p->pos.x - (m_Vec[SPH_VOLMIN].x + 2);			// -- Simulates object in center of flow
 			if ( diff <= 0 ) {
-				p->pos.x = (m_Vec[SPH_VOLMAX].x - 2) + diff*2;				
+				p->pos.x = (m_Vec[SPH_VOLMAX].x - 2) + diff*2;
 				p->pos.z = 10;
 			}
 		}
@@ -650,8 +647,9 @@ void FluidSystem::SPH_ComputeForceSlow ()
 				force.y += ( pterm * dy + vterm * (q->vel_eval.y - p->vel_eval.y) ) * dterm;
 				force.z += ( pterm * dz + vterm * (q->vel_eval.z - p->vel_eval.z) ) * dterm;
 			}
-		}			
-		p->sph_force = force;		
+		}
+		p->sph_force = force;
+        p->temp += AMBIENT_T*0.01; // temperature
 	}
 }
 
@@ -721,7 +719,8 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 	int i;
 	float c, d;
 	float dx, dy, dz;
-	float mR, mR2, visc;	
+	float mR, mR2, visc;
+    float new_temp;	
 
 	d = m_Param[SPH_SIMSCALE];
 	mR = m_Param[SPH_SMOOTHRADIUS];
@@ -735,6 +734,7 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 		p = (Fluid*) dat1;
 
 		force.Set ( 0, 0, 0 );
+        new_temp = 0.0;
 		for (int j=0; j < m_NC[i]; j++ ) {
 			pcurr = (Fluid*) (mBuf[0].data + m_Neighbor[i][j]*mBuf[0].stride);
 			dx = ( p->pos.x - pcurr->pos.x)*d;		// dist in cm
@@ -749,45 +749,12 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 			force.y += ( pterm * dy + vterm * (pcurr->vel_eval.y - p->vel_eval.y) ) * dterm;
 			force.z += ( pterm * dz + vterm * (pcurr->vel_eval.z - p->vel_eval.z) ) * dterm;
 
-            p->temp = 30; //testing
-
+            new_temp += pcurr->temp*0.001; // temperature
 		}
-
-
-		
 		p->sph_force = force;
-	}
-}
-
-void FluidSystem::SPH_ComputeTemperature()
-{
-	char *dat1, *dat1_end;	
-	Fluid *p;
-	Fluid *pcurr;
-	Vector3DF force, fcurr;
-	register float pterm, vterm, dterm;
-	int i;
-	float c, d;
-	float dx, dy, dz;
-	float mR, mR2, visc;	
-
-	d = m_Param[SPH_SIMSCALE];
-	mR = m_Param[SPH_SMOOTHRADIUS];
-	mR2 = (mR*mR);
-	visc = m_Param[SPH_VISC];
-
-	dat1_end = mBuf[0].data + NumPoints()*mBuf[0].stride;
-	i = 0;
-	
-	for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride, i++ ) {
-		p = (Fluid*) dat1;
-
-		for (int j=0; j < m_NC[i]; j++ ) {
-			pcurr = (Fluid*) (mBuf[0].data + m_Neighbor[i][j]*mBuf[0].stride);
-			dx = ( p->pos.x - pcurr->pos.x)*d;		// dist in cm
-			dy = ( p->pos.y - pcurr->pos.y)*d;
-			dz = ( p->pos.z - pcurr->pos.z)*d;				
-			c = ( mR - m_NDist[i][j] );
-		}			
+        if (m_NC[i] == 2) {
+            new_temp += AMBIENT_T*0.01;
+        }
+        p->temp += new_temp;
 	}
 }

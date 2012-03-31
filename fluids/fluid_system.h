@@ -32,6 +32,7 @@
 
 	#include "point_set.h"
 	#include "fluid.h"
+    #include "../my_defs.h"
 	
 	// Scalar params
 	#define SPH_SIMSIZE			4
@@ -101,7 +102,6 @@
 		void SPH_ComputeForceSlow ();				// O(n^2)
 		void SPH_ComputeForceGrid ();				// O(kn) - spatial grid
 		void SPH_ComputeForceGridNC ();				// O(cn) - neighbor table
-		void SPH_ComputeTemperature ();
 		
 	private:
 
