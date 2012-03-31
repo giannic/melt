@@ -32,13 +32,17 @@
 		Vector3DF		pos;			// Basic particle (must match Particle class)
 		DWORD			clr;
 		int				next;
-		Vector3DF		vel;			
-		Vector3DF		vel_eval;		
+		Vector3DF		vel;
+		Vector3DF		vel_eval; 
 		unsigned short	age;
 
 		float			pressure;		// Smoothed Particle Hydrodynamics
-		float			density;	
+		float			density;
 		Vector3DF		sph_force;
+
+        float           temp;           // melting members
+        bool            state;          // 0 for solid, 1 for liuqid
+        float           mass;
 	};
 
 #endif /*PARTICLE_H_*/

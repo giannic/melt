@@ -5,7 +5,7 @@
 
 #define hx 20.0 //half size
 #define hy 20.0
-#define hz 40.0
+#define hz 20.0
 
 class Visualizer {
 

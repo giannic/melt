@@ -100,7 +100,8 @@
 		
 		void SPH_ComputeForceSlow ();				// O(n^2)
 		void SPH_ComputeForceGrid ();				// O(kn) - spatial grid
-		void SPH_ComputeForceGridNC ();				// O(cn) - neighbor table		
+		void SPH_ComputeForceGridNC ();				// O(cn) - neighbor table
+		void SPH_ComputeTemperature ();
 		
 	private:
 

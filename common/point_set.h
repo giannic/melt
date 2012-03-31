@@ -70,7 +70,7 @@
 		Vector3DF		pos;
 		DWORD			clr;
 		int				next;
-		Vector3DF		vel;			
+		Vector3DF		vel;		
 		Vector3DF		vel_eval;		
 		unsigned short	age;
 	};

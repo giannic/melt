@@ -206,6 +206,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\my_defs.h"
+				>
+			</File>
+			<File
 				RelativePath=".\visualizer.cpp"
 				>
 			</File>

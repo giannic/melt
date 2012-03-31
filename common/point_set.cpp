@@ -247,6 +247,7 @@ void PointSet::AddVolume ( Vector3DF min, Vector3DF max, float spacing )
 				p->pos = pos;				
 				//p->clr = COLORA( (x-min.x)/dx, (y-min.y)/dy, (z-min.z)/dz, 1); // random colors
 				//p->clr = COLORA( (y-min.y)/dy, (y-min.y)/dy, (y-min.y)/dy, 1); // height colors
+
 				p->clr = COLORA(0.2, 0.6, 1.0, 1); //consistent color
 			}
 		}

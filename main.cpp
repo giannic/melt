@@ -145,12 +145,9 @@ void drawScene ( float* viewmat, bool bShade )
 			glVertex3f ( n,  100, 0.1 );
 		}
 		glEnd ();
-        //Visualizer::draw_bound();
-		psys.Draw ( &viewmat[0], 0.8 );				// Draw particles		
-
+		psys.Draw ( &viewmat[0], 0.8 );				// Draw particles
 	} else {
 		glDisable ( GL_LIGHTING );
-       // Visualizer::draw_bound();
 		psys.Draw ( &viewmat[0], 0.55 );			// Draw particles
 	}
 }
@@ -266,7 +263,7 @@ void grabScreen()
     ILenum error = ilGetError();
     assert(error == IL_NO_ERROR);
 
-    ilTexImage(640, 480, 1, 3, IL_RGB, IL_UNSIGNED_BYTE, NULL);
+    ilTexImage(1024, 768, 1, 3, IL_RGB, IL_UNSIGNED_BYTE, NULL); // 640 x 480 original
 
     error = ilGetError();
     assert(error == IL_NO_ERROR);
@@ -276,9 +273,9 @@ void grabScreen()
     error = ilGetError();
     assert(error == IL_NO_ERROR);
 
-    for (int i=479; i>=0; i--) {
-	    glReadPixels(0,i,640,1,GL_RGB, GL_UNSIGNED_BYTE, 
-		    data + (640 * 3 * i));
+    for (int i=767; i>=0; i--) { // 479 original
+	    glReadPixels(0,i,1024,1,GL_RGB, GL_UNSIGNED_BYTE, 
+		    data + (1024 * 3 * i));// 640 original
     }
 
     char anim_filename[2048];

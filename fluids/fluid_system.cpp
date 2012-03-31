@@ -20,8 +20,6 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 
-
-
 #include <conio.h>
 
 #ifdef _MSC_VER
@@ -34,16 +32,12 @@
 #include "mtime.h"
 #include "fluid_system.h"
 
-#ifdef BUILD_CUDA
-	#include "fluid_system_host.cuh"
-#endif
-
 #define EPSILON			0.00001f			//for collision detection
 
 FluidSystem::FluidSystem ()
 {
     volmin_x = -20; volmin_y = -20; volmin_z = 0;
-	volmax_x = 20; volmax_y = 20; volmax_z = 80;
+	volmax_x = 20; volmax_y = 20; volmax_z = 20;
 
 	initmin_x = 0; initmin_y = 0; initmin_z = 0;
 	initmax_x = 20; initmax_y = 20; initmax_z = 20;
@@ -68,10 +62,14 @@ void FluidSystem::Initialize ( int mode, int total )
 	AddAttribute ( 0, "density", sizeof ( double ), false );
 	AddAttribute ( 0, "sph_force", sizeof ( Vector3DF ), false );
 	AddAttribute ( 0, "next", sizeof ( Fluid* ), false );
-	AddAttribute ( 0, "tag", sizeof ( bool ), false );		
-		
+	AddAttribute ( 0, "tag", sizeof ( bool ), false );
+
+	AddAttribute ( 0, "temp", sizeof ( float ), false );
+    AddAttribute ( 0, "state", sizeof ( bool ), false );
+	AddAttribute ( 0, "mass", sizeof ( float ), false );
+
 	SPH_Setup ();
-	Reset ( total );	
+	Reset ( total );
 }
 
 void FluidSystem::Reset ( int nmax )
@@ -116,6 +114,9 @@ int FluidSystem::AddPoint ()
 	f->next = 0x0;
 	f->pressure = 0;
 	f->density = 0;
+    f->temp = 0;
+    f->state = 0;
+    f->mass = 0; // mucho problem?
 	return ndx;
 }
 
@@ -157,40 +158,6 @@ void FluidSystem::Run ()
 	#else
 
 		if ( m_Toggle[USE_CUDA] ) {
-			
-			#ifdef BUILD_CUDA
-				// -- GPU --
-				start.SetSystemTime ( ACC_NSEC );		
-				TransferToCUDA ( mBuf[0].data, (int*) &m_Grid[0], NumPoints() );
-				if ( bTiming) { stop.SetSystemTime ( ACC_NSEC ); stop = stop - start; printf ( "TO: %s\n", stop.GetReadableTime().c_str() ); }
-			
-				start.SetSystemTime ( ACC_NSEC );		
-				Grid_InsertParticlesCUDA ();
-				if ( bTiming) { stop.SetSystemTime ( ACC_NSEC ); stop = stop - start; printf ( "INSERT (CUDA): %s\n", stop.GetReadableTime().c_str() ); }
-
-				start.SetSystemTime ( ACC_NSEC );
-				SPH_ComputePressureCUDA ();
-				if ( bTiming) { stop.SetSystemTime ( ACC_NSEC ); stop = stop - start; printf ( "PRESS (CUDA): %s\n", stop.GetReadableTime().c_str() ); }
-
-				start.SetSystemTime ( ACC_NSEC );
-				SPH_ComputeForceCUDA (); 
-				if ( bTiming) { stop.SetSystemTime ( ACC_NSEC ); stop = stop - start; printf ( "FORCE (CUDA): %s\n", stop.GetReadableTime().c_str() ); }
-
-				//** CUDA integrator is incomplete..
-				// Once integrator is done, we can remove TransferTo/From steps
-				/*start.SetSystemTime ( ACC_NSEC );
-				SPH_AdvanceCUDA( m_DT, m_DT/m_Param[SPH_SIMSCALE] );
-				if ( bTiming) { stop.SetSystemTime ( ACC_NSEC ); stop = stop - start; printf ( "ADV (CUDA): %s\n", stop.GetReadableTime().c_str() ); }*/
-
-				start.SetSystemTime ( ACC_NSEC );		
-				TransferFromCUDA ( mBuf[0].data, (int*) &m_Grid[0], NumPoints() );
-				if ( bTiming) { stop.SetSystemTime ( ACC_NSEC ); stop = stop - start; printf ( "FROM: %s\n", stop.GetReadableTime().c_str() ); }
-
-				// .. Do advance on CPU 
-				Advance();
-
-			#endif
-			
 		} else {
 			// -- CPU only --
 
@@ -257,7 +224,7 @@ void FluidSystem::Advance ()
 	for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride ) {
 		p = (Fluid*) dat1;		
 
-		// Compute Acceleration		
+		// Compute Acceleration
 		accel = p->sph_force;
 		accel *= m_Param[SPH_PMASS];
 
@@ -265,7 +232,7 @@ void FluidSystem::Advance ()
 		speed = accel.x*accel.x + accel.y*accel.y + accel.z*accel.z;
 		if ( speed > SL2 ) {
 			accel *= SL / sqrt(speed);
-		}		
+		}
 	
 		// Boundary Conditions
 
@@ -382,6 +349,9 @@ void FluidSystem::Advance ()
 			p->clr = COLORA ( v, 1-v, 0, 1 );
 		}
 
+		if (m_Param[CLR_MODE] == 3.0) {
+
+        }
 
 		// Euler integration -------------------------------
 		/* accel += m_Gravity;
@@ -399,7 +369,7 @@ void FluidSystem::Advance ()
 				p->pos.x = (m_Vec[SPH_VOLMAX].x - 2) + diff*2;				
 				p->pos.z = 10;
 			}
-		}	
+		}
 	}
 
 	m_Time += m_DT;
@@ -741,15 +711,54 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 			dx = ( p->pos.x - pcurr->pos.x)*d;		// dist in cm
 			dy = ( p->pos.y - pcurr->pos.y)*d;
 			dz = ( p->pos.z - pcurr->pos.z)*d;				
-			c = ( mR - m_NDist[i][j] );
+			c = ( mR - m_NDist[i][j] ); //distance between current and neighbor?
 			pterm = -0.5f * c * m_SpikyKern * ( p->pressure + pcurr->pressure) / m_NDist[i][j];
 			dterm = c * p->density * pcurr->density;
 			vterm = m_LapKern * visc;
+
 			force.x += ( pterm * dx + vterm * (pcurr->vel_eval.x - p->vel_eval.x) ) * dterm;
 			force.y += ( pterm * dy + vterm * (pcurr->vel_eval.y - p->vel_eval.y) ) * dterm;
 			force.z += ( pterm * dz + vterm * (pcurr->vel_eval.z - p->vel_eval.z) ) * dterm;
-		}			
+
+            p->temp = 0; //testing
+
+		}
+
+
+		
 		p->sph_force = force;
 	}
 }
 
+void FluidSystem::SPH_ComputeTemperature()
+{
+	char *dat1, *dat1_end;	
+	Fluid *p;
+	Fluid *pcurr;
+	Vector3DF force, fcurr;
+	register float pterm, vterm, dterm;
+	int i;
+	float c, d;
+	float dx, dy, dz;
+	float mR, mR2, visc;	
+
+	d = m_Param[SPH_SIMSCALE];
+	mR = m_Param[SPH_SMOOTHRADIUS];
+	mR2 = (mR*mR);
+	visc = m_Param[SPH_VISC];
+
+	dat1_end = mBuf[0].data + NumPoints()*mBuf[0].stride;
+	i = 0;
+	
+	for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride, i++ ) {
+		p = (Fluid*) dat1;
+
+		for (int j=0; j < m_NC[i]; j++ ) {
+			pcurr = (Fluid*) (mBuf[0].data + m_Neighbor[i][j]*mBuf[0].stride);
+			dx = ( p->pos.x - pcurr->pos.x)*d;		// dist in cm
+			dy = ( p->pos.y - pcurr->pos.y)*d;
+			dz = ( p->pos.z - pcurr->pos.z)*d;				
+			c = ( mR - m_NDist[i][j] );
+		}			
+	}
+}
