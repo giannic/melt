@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="fluids;common"
+				AdditionalIncludeDirectories="fluids;common; DevIL1.6.7\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;FREEGLUT_STATIC"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -63,10 +63,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="glee_2008.lib freeglut_VS2008.lib"
+				AdditionalDependencies="glee_2008.lib freeglut_VS2008.lib DevIL.lib ilu.lib ilut.lib"
 				OutputFile="$(OutDir)/fluids_debug.exe"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;C:\Program Files\NVIDIA Corporation\Cg\lib&quot;"
+				AdditionalLibraryDirectories="&quot;C:\Program Files\NVIDIA Corporation\Cg\lib&quot;;DevIL1.6.7\lib"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/cgdemo.pdb"
 				SubSystem="1"

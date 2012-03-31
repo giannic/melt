@@ -349,7 +349,36 @@ void FluidSystem::Advance ()
 			p->clr = COLORA ( v, 1-v, 0, 1 );
 		}
 
-		if (m_Param[CLR_MODE] == 3.0) {
+		if (m_Param[CLR_MODE] == 0.0) {
+			float v = p->temp;
+			float vmin = 0.0;
+			float vmax = 1.0;
+				float red = 1.0f;
+	float green = 1.0f;
+	float blue = 1.0f;
+	float alpha = 1.0f;
+	float dv;
+
+	if (v < vmin)
+	  v = vmin;
+	if (v > vmax)
+	  v = vmax;
+	dv = vmax - vmin;
+
+	if (v < (vmin + 0.25 * dv)) {
+	  red = 0.0;
+	  green = 4 * (v - vmin) / dv;
+	} else if (v < (vmin + 0.5 * dv)) {
+	  red = 0.0;
+	  blue = 1.0 + 4.0 * (vmin + 0.25 * dv - v) / dv;
+	} else if (v < (vmin + 0.75 * dv)) {
+	  red = 4.0 * (v - vmin - 0.5 * dv) / dv;
+	  blue = 0.0;
+	} else {
+	  green = 1.0 + 4.0 * (vmin + 0.75 * dv - v) / dv;
+	  blue = 0.0;
+	}
+	p->clr = COLORA(red,green,blue,alpha);
 
         }
 
@@ -720,7 +749,7 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 			force.y += ( pterm * dy + vterm * (pcurr->vel_eval.y - p->vel_eval.y) ) * dterm;
 			force.z += ( pterm * dz + vterm * (pcurr->vel_eval.z - p->vel_eval.z) ) * dterm;
 
-            p->temp = 0; //testing
+            p->temp = 30; //testing
 
 		}
 
