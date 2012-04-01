@@ -231,7 +231,7 @@ int PointSet::AddPointReuse ()
 void PointSet::AddVolume ( Vector3DF min, Vector3DF max, float spacing )
 {
 	Vector3DF pos;
-	Point* p;	
+	Point* p;
 	float dx, dy, dz;
 	dx = max.x-min.x;
 	dy = max.y-min.y;

@@ -118,7 +118,7 @@ int FluidSystem::AddPoint ()
     f->temp = 0.2;
     f->state = LIQUID;
     f->mass = 0; // mucho problem?
-    f->adjacents = 0;
+    f->adjacents = 6;
 	return ndx;
 }
 
@@ -140,7 +140,7 @@ int FluidSystem::AddPointReuse ()
 	f->density = 0; 
 	f->temp = 0.2;
     f->state = SOLID;
-    f->adjacents = 0;
+    f->adjacents = 6;
 	return ndx;
 }
 
@@ -471,7 +471,6 @@ void FluidSystem::SPH_ComputeKernels ()
 
 void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cube
 {
-	Vector3DF pos;
 	Vector3DF min, max;
 	
 	Reset ( nmax );
@@ -481,13 +480,11 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
 		// Basic cube
 	    m_Vec [ SPH_VOLMIN ].Set ( volmin_x, volmin_y, volmin_z );
 		m_Vec [ SPH_VOLMAX ].Set ( volmax_x, volmax_y, volmax_z);
-
 		
 		m_Vec [ SPH_INITMIN ].Set ( initmin_x, initmin_y, initmin_z);
 		m_Vec [ SPH_INITMAX ].Set ( initmax_x, initmax_y, initmax_z);
 		break;
 	}
-
 
 	m_Param [ SPH_SIMSIZE ] = m_Param [ SPH_SIMSCALE ] * (m_Vec[SPH_VOLMAX].z - m_Vec[SPH_VOLMIN].z);
 	m_Param [ SPH_PDIST ] = pow ( m_Param[SPH_PMASS] / m_Param[SPH_RESTDENSITY], 1/3.0 );
@@ -495,6 +492,26 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
 	float ss = m_Param [ SPH_PDIST ]*0.87 / m_Param[ SPH_SIMSCALE ];
 	//printf ( "Spacing: %f\n", ss);
 	AddVolume ( m_Vec[SPH_INITMIN], m_Vec[SPH_INITMAX], ss );	// Create the particles
+
+    Fluid* f;
+	Vector3DF pos;
+    char *dat, *dat_end = mBuf[0].data + NumPoints()*mBuf[0].stride;
+	for ( dat = mBuf[0].data; dat < dat_end; dat += mBuf[0].stride) {
+		f = (Fluid*) dat;
+        pos = f->pos;
+
+        if (pos.x < m_Vec[SPH_INITMIN].x + ss || pos.x > m_Vec[SPH_INITMAX].x - ss ) {
+            f->adjacents--;
+        }
+
+        if (pos.y < m_Vec[SPH_INITMIN].y + ss || pos.y > m_Vec[SPH_INITMAX].y - ss ) {
+            f->adjacents--;
+        }
+
+        if (pos.z < m_Vec[SPH_INITMIN].z + ss || pos.z > m_Vec[SPH_INITMAX].z - ss ) {
+            f->adjacents--;
+        }
+    }
 
 	float cell_size = m_Param[SPH_SMOOTHRADIUS]*2.0;			// Grid cell size (2r)
 	Grid_Setup ( m_Vec[SPH_VOLMIN], m_Vec[SPH_VOLMAX], m_Param[SPH_SIMSCALE], cell_size, 1.0 ); // Setup grid
@@ -602,22 +619,22 @@ void FluidSystem::SPH_ComputeForceGridNC ()
                 force.x += ( pterm * dx + vterm * (pcurr->vel_eval.x - p->vel_eval.x) ) * dterm;
                 force.y += ( pterm * dy + vterm * (pcurr->vel_eval.y - p->vel_eval.y) ) * dterm;
                 force.z += ( pterm * dz + vterm * (pcurr->vel_eval.z - p->vel_eval.z) ) * dterm;
-                //new_temp += pcurr->temp*1;// temperature
+                //new_temp += pcurr->temp*0.1;// temperature
             }
         } else {
 		    force -= m_Vec[PLANE_GRAV_DIR];
 			force *= 1/m_Param[SPH_PMASS];
+            for (int j=0; j < m_NC[i]; j++ ) {
+                pcurr = (Fluid*) (mBuf[0].data + m_Neighbor[i][j]*mBuf[0].stride);
+                new_temp += pcurr->temp*0.0001;// temperature
+            }
+
 		}
         p->sph_force = force;
 
         if (p->adjacents < 6) { // surface particle
-
-        }
-
-        if (m_NC[i] <= 6) {
-            new_temp += AMBIENT_T*0.01;
+            new_temp += AMBIENT_T*0.005;
         }
         p->temp += new_temp;
-
 	}
 }
