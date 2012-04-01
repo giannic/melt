@@ -37,7 +37,7 @@
 FluidSystem::FluidSystem ()
 {
     volmin_x = -20; volmin_y = -20; volmin_z = 0;
-	volmax_x = 20; volmax_y = 20; volmax_z = 20;
+	volmax_x = 20; volmax_y = 20; volmax_z = 40;
 
 	initmin_x = 0; initmin_y = 0; initmin_z = 0;
 	initmax_x = 20; initmax_y = 20; initmax_z = 20;
@@ -65,7 +65,7 @@ void FluidSystem::Initialize ( int mode, int total )
 	AddAttribute ( 0, "tag", sizeof ( bool ), false );
 
 	AddAttribute ( 0, "temp", sizeof ( float ), false );
-    AddAttribute ( 0, "state", sizeof ( bool ), false );
+    AddAttribute ( 0, "state", sizeof ( enum Status ), false );
 	AddAttribute ( 0, "mass", sizeof ( float ), false );
 
 	SPH_Setup ();
@@ -115,7 +115,7 @@ int FluidSystem::AddPoint ()
 	f->pressure = 0;
 	f->density = 0;
     f->temp = 0.2;
-    f->state = 0;
+    f->state = LIQUID;
     f->mass = 0; // mucho problem?
 	return ndx;
 }
@@ -135,6 +135,8 @@ int FluidSystem::AddPointReuse ()
 	f->next = 0x0;
 	f->pressure = 0;
 	f->density = 0; 
+	f->temp = 0.2;
+    f->state = SOLID;
 	return ndx;
 }
 
@@ -351,29 +353,27 @@ void FluidSystem::Advance ()
 
 		if (m_Param[CLR_MODE] == 0.0) {
 			float v = p->temp;
-			float vmin = 0.0;
-			float vmax = 1.0;
 
             float rgba[4] = {1.0f, 1.0f, 1.0f, 1.0f};
             float dv;
 
-            if (v < vmin)
-                v = vmin;
-            if (v > vmax)
-                v = vmax;
-            dv = vmax - vmin;
+            if (v < MIN_T)
+                v = MIN_T;
+            if (v > MAX_T)
+                v = MAX_T;
+            dv = MAX_T - MIN_T;
 
-            if (v < (vmin + 0.25 * dv)) {
+            if (v < (MIN_T + 0.25 * dv)) {
                 rgba[0] = 0.0;
-                rgba[1] = 4 * (v - vmin) / dv;
-            } else if (v < (vmin + 0.5 * dv)) {
+                rgba[1] = 4 * (v - MIN_T) / dv;
+            } else if (v < (MIN_T + 0.5 * dv)) {
                 rgba[0] = 0.0;
-                rgba[2] = 1.0 + 4.0 * (vmin + 0.25 * dv - v) / dv;
-            } else if (v < (vmin + 0.75 * dv)) {
-                rgba[0] = 4.0 * (v - vmin - 0.5 * dv) / dv;
+                rgba[2] = 1.0 + 4.0 * (MIN_T + 0.25 * dv - v) / dv;
+            } else if (v < (MIN_T + 0.75 * dv)) {
+                rgba[0] = 4.0 * (v - MIN_T - 0.5 * dv) / dv;
                 rgba[2] = 0.0;
             } else {
-                rgba[1] = 1.0 + 4.0 * (vmin + 0.75 * dv - v) / dv;
+                rgba[1] = 1.0 + 4.0 * (MIN_T + 0.75 * dv - v) / dv;
                 rgba[2] = 0.0;
             }
             p->clr = COLORA(rgba[0], rgba[1], rgba[2], rgba[3]);
@@ -720,7 +720,7 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 	float c, d;
 	float dx, dy, dz;
 	float mR, mR2, visc;
-    float new_temp;	
+    float new_temp = 0.0;	
 
 	d = m_Param[SPH_SIMSCALE];
 	mR = m_Param[SPH_SMOOTHRADIUS];
@@ -732,9 +732,9 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 	
 	for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride, i++ ) {
 		p = (Fluid*) dat1;
-
 		force.Set ( 0, 0, 0 );
         new_temp = 0.0;
+		if (p->state == LIQUID) {
 		for (int j=0; j < m_NC[i]; j++ ) {
 			pcurr = (Fluid*) (mBuf[0].data + m_Neighbor[i][j]*mBuf[0].stride);
 			dx = ( p->pos.x - pcurr->pos.x)*d;		// dist in cm
@@ -744,17 +744,20 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 			pterm = -0.5f * c * m_SpikyKern * ( p->pressure + pcurr->pressure) / m_NDist[i][j];
 			dterm = c * p->density * pcurr->density;
 			vterm = m_LapKern * visc;
-
+			
 			force.x += ( pterm * dx + vterm * (pcurr->vel_eval.x - p->vel_eval.x) ) * dterm;
 			force.y += ( pterm * dy + vterm * (pcurr->vel_eval.y - p->vel_eval.y) ) * dterm;
 			force.z += ( pterm * dz + vterm * (pcurr->vel_eval.z - p->vel_eval.z) ) * dterm;
-
-            new_temp += pcurr->temp*0.001; // temperature
+            //new_temp += pcurr->temp*1;// temperature
 		}
-		p->sph_force = force;
-        if (m_NC[i] == 2) {
-            new_temp += AMBIENT_T*0.01;
-        }
-        p->temp += new_temp;
+		} else {
+		    force -= m_Vec[PLANE_GRAV_DIR];
+			force *= 1/m_Param[SPH_PMASS];
+		}
+			p->sph_force = force;
+        //if (m_NC[i] == 2) {
+     //       new_temp += AMBIENT_T*0.01;
+      //  }
+        //p->temp += new_temp;
 	}
 }

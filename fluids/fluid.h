@@ -25,6 +25,7 @@
 	
 	#include "vector.h"
 
+	#include "../my_defs.h"		
 	#include "common_defs.h"
 
 	struct Fluid {
@@ -41,7 +42,7 @@
 		Vector3DF		sph_force;
 
         float           temp;           // melting members
-        bool            state;          // 0 for solid, 1 for liuqid
+        Status          state;          // true for solid, false for liuqid
         float           mass;
 	};
 
