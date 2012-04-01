@@ -211,7 +211,7 @@ int GeomX::AddBuffer ( uchar typ, ushort stride, int max )
 }
 void GeomX::ResetBuffer ( uchar b, int n )
 {
-	mBuf[b].max = n;		
+	mBuf[b].max = n;
 
 	if ( mBuf[b].data != 0x0 ) free ( mBuf[b].data );
 

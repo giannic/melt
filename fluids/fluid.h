@@ -44,6 +44,7 @@
         float           temp;           // melting members
         Status          state;          // true for solid, false for liuqid
         float           mass;
+        int             adjacents;       // number of directly adjacent neighbors
 	};
 
 #endif /*PARTICLE_H_*/

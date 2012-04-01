@@ -7,5 +7,6 @@
 
 // State of particle
 enum Status { SOLID, LIQUID};
+static const float diff_T = 1.0;
 
 #endif MYDEFS

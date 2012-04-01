@@ -209,14 +209,6 @@
 				RelativePath=".\my_defs.h"
 				>
 			</File>
-			<File
-				RelativePath=".\visualizer.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\visualizer.h"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="common"
