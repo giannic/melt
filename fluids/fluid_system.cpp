@@ -65,14 +65,9 @@ void FluidSystem::Initialize ( int mode, int total )
 	AddAttribute ( 0, "tag", sizeof ( bool ), false );
 
 	AddAttribute ( 0, "temp", sizeof ( float ), false );
-<<<<<<< HEAD
     AddAttribute ( 0, "state", sizeof ( enum Status ), false );
 	AddAttribute ( 0, "mass", sizeof ( float ), false );
-=======
-    AddAttribute ( 0, "state", sizeof ( bool ), false );
-    AddAttribute ( 0, "mass", sizeof ( float ), false );
     AddAttribute ( 0, "adjacents", sizeof ( int ), false );
->>>>>>> d0c60a4981497a46cbb03a57d555ccd8e983fbee
 
 	SPH_Setup ();
 	Reset ( total );
@@ -142,14 +137,10 @@ int FluidSystem::AddPointReuse ()
 	f->vel_eval.Set(0,0,0);
 	f->next = 0x0;
 	f->pressure = 0;
-<<<<<<< HEAD
 	f->density = 0; 
 	f->temp = 0.2;
     f->state = SOLID;
-=======
-	f->density = 0;
     f->adjacents = 0;
->>>>>>> d0c60a4981497a46cbb03a57d555ccd8e983fbee
 	return ndx;
 }
 
@@ -598,33 +589,26 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 		force.Set ( 0, 0, 0 );
         new_temp = 0.0;
 		if (p->state == LIQUID) {
-		for (int j=0; j < m_NC[i]; j++ ) {
-			pcurr = (Fluid*) (mBuf[0].data + m_Neighbor[i][j]*mBuf[0].stride);
-			dx = ( p->pos.x - pcurr->pos.x)*d;		// dist in cm
-			dy = ( p->pos.y - pcurr->pos.y)*d;
-			dz = ( p->pos.z - pcurr->pos.z)*d;				
-			c = ( mR - m_NDist[i][j] ); //distance between current and neighbor?
-			pterm = -0.5f * c * m_SpikyKern * ( p->pressure + pcurr->pressure) / m_NDist[i][j];
-			dterm = c * p->density * pcurr->density;
-			vterm = m_LapKern * visc;
+            for (int j=0; j < m_NC[i]; j++ ) {
+                pcurr = (Fluid*) (mBuf[0].data + m_Neighbor[i][j]*mBuf[0].stride);
+                dx = ( p->pos.x - pcurr->pos.x)*d;		// dist in cm
+                dy = ( p->pos.y - pcurr->pos.y)*d;
+                dz = ( p->pos.z - pcurr->pos.z)*d;				
+                c = ( mR - m_NDist[i][j] ); //distance between current and neighbor?
+                pterm = -0.5f * c * m_SpikyKern * ( p->pressure + pcurr->pressure) / m_NDist[i][j];
+                dterm = c * p->density * pcurr->density;
+                vterm = m_LapKern * visc;
 			
-			force.x += ( pterm * dx + vterm * (pcurr->vel_eval.x - p->vel_eval.x) ) * dterm;
-			force.y += ( pterm * dy + vterm * (pcurr->vel_eval.y - p->vel_eval.y) ) * dterm;
-			force.z += ( pterm * dz + vterm * (pcurr->vel_eval.z - p->vel_eval.z) ) * dterm;
-            //new_temp += pcurr->temp*1;// temperature
-		}
-<<<<<<< HEAD
-		} else {
+                force.x += ( pterm * dx + vterm * (pcurr->vel_eval.x - p->vel_eval.x) ) * dterm;
+                force.y += ( pterm * dy + vterm * (pcurr->vel_eval.y - p->vel_eval.y) ) * dterm;
+                force.z += ( pterm * dz + vterm * (pcurr->vel_eval.z - p->vel_eval.z) ) * dterm;
+                //new_temp += pcurr->temp*1;// temperature
+            }
+        } else {
 		    force -= m_Vec[PLANE_GRAV_DIR];
 			force *= 1/m_Param[SPH_PMASS];
 		}
-			p->sph_force = force;
-        //if (m_NC[i] == 2) {
-     //       new_temp += AMBIENT_T*0.01;
-      //  }
-        //p->temp += new_temp;
-=======
-		p->sph_force = force;
+        p->sph_force = force;
 
         if (p->adjacents < 6) { // surface particle
 
@@ -634,6 +618,6 @@ void FluidSystem::SPH_ComputeForceGridNC ()
             new_temp += AMBIENT_T*0.01;
         }
         p->temp += new_temp;
->>>>>>> d0c60a4981497a46cbb03a57d555ccd8e983fbee
+
 	}
 }
