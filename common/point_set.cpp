@@ -244,11 +244,11 @@ void PointSet::AddVolume ( Vector3DF min, Vector3DF max, float spacing )
 				//pos.x += -0.05 + float( rand() * 0.1 ) / RAND_MAX;
 				//pos.y += -0.05 + float( rand() * 0.1 ) / RAND_MAX;
 				//pos.z += -0.05 + float( rand() * 0.1 ) / RAND_MAX;
-				p->pos = pos;				
+				p->pos = pos;
                 p->clr = COLORA( (x-min.x)/dx, (y-min.y)/dy, (z-min.z)/dz, 1);
             }
 		}
-	}	
+	}
 }
 
 void PointSet::Draw ( float* view_mat, float rad )
@@ -484,7 +484,7 @@ void PointSet::Grid_InsertParticles ()
 		gx = (int)( (p->pos.x - m_GridMin.x) * m_GridDelta.x);		// Determine grid cell
 		gy = (int)( (p->pos.y - m_GridMin.y) * m_GridDelta.y);
 		gz = (int)( (p->pos.z - m_GridMin.z) * m_GridDelta.z);
-		gs = (int)( (gz*m_GridRes.y + gy)*m_GridRes.x + gx);		
+		gs = (int)( (gz*m_GridRes.y + gy)*m_GridRes.x + gx);	
 		if ( gs >= 0 && gs < m_GridTotal ) {
 			p->next = m_Grid[gs];
 			m_Grid[gs] = n;

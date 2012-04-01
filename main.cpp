@@ -29,7 +29,6 @@
 
 #include "common_defs.h"
 #include "include\fps.h"
-#include "visualizer.h"
 
 #ifdef BUILD_CUDA
 	#include "fluid_system_host.cuh"	
@@ -113,7 +112,7 @@ int frame;
 
 void drawScene ( float* viewmat, bool bShade )
 {
-    Visualizer::draw_bound();
+    psys.SPH_DrawDomain();
 
 	if ( iShade <= 1 && bShade ) {		
 		glEnable ( GL_LIGHT0 );
