@@ -653,15 +653,18 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 		//new_temp = diff_T * new_temp;
 		//std::cout << " Before New_temp " << new_temp << std::endl;
 		float q_air = 0.0;
-        if (p->adjacents < 6) { // surface particle
+        if (p->adjacents < 6) { 
+			// Surface particle
 			float area = ((6.0-p->adjacents)/6.0) * (ss * ss * 6.0);
             q_air = heat_conduct * (AMBIENT_T - p->temp) * area;
-			new_temp += q_air / (heat_cap * m_Param [ SPH_PMASS ]);
-			//std::cout << "New_temp " << new_temp << std::endl;
+			//std::cout << "P->temp " << p->temp << std::endl;
+			float air_change = q_air / (heat_cap * m_Param [ SPH_PMASS ]);
+			new_temp += air_change;
+			//std::cout << "Air Change " << air_change << std::endl;
 		} 
 //		new_temp = 10;
         p->temp_eval = new_temp;
-		if (p->temp > 0.0001) {
+		if (p->temp > 0.5) {
 			p->state = LIQUID;
 		} 
 	}
