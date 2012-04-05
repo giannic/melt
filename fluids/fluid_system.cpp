@@ -116,7 +116,7 @@ int FluidSystem::AddPoint ()
 	f->pressure = 0;
 	f->density = 0;
     f->temp = 0.2;
-    f->state = LIQUID;
+    f->state = LIQUID; //SOLID;
     f->mass = 0; // mucho problem?
     f->adjacents = 6;
 	return ndx;
@@ -139,7 +139,7 @@ int FluidSystem::AddPointReuse ()
 	f->pressure = 0;
 	f->density = 0; 
 	f->temp = 0.2;
-    f->state = SOLID;
+    f->state = LIQUID;//SOLID;
     f->adjacents = 6;
 	return ndx;
 }
@@ -446,7 +446,7 @@ void FluidSystem::SPH_Setup ()
 	m_Param [ SPH_VISC ] =			0.2;			// pascal-second (Pa.s) = 1 kg m^-1 s^-1  (see wikipedia page on viscosity)
 	m_Param [ SPH_RESTDENSITY ] =	600.0;			// kg / m^3
 	m_Param [ SPH_PMASS ] =			0.00020543;		// kg
-	m_Param [ SPH_PRADIUS ] =		0.004;			// m
+	m_Param [ SPH_PRADIUS ] =		0.002;//0.004			// m
 	m_Param [ SPH_PDIST ] =			0.0059;			// m
 	m_Param [ SPH_SMOOTHRADIUS ] =	0.01;			// m 
 	m_Param [ SPH_INTSTIFF ] =		1.00;
@@ -591,7 +591,7 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 	float c, d;
 	float dx, dy, dz;
 	float mR, mR2, visc;
-    float new_temp = 0.0;	
+    float new_temp = 0.0;
 
 	d = m_Param[SPH_SIMSCALE];
 	mR = m_Param[SPH_SMOOTHRADIUS];
@@ -603,8 +603,9 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 	
 	for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride, i++ ) {
 		p = (Fluid*) dat1;
-		force.Set ( 0, 0, 0 );
+		force.Set (0, 0, 0);
         new_temp = 0.0;
+
 		if (p->state == LIQUID) {
             for (int j=0; j < m_NC[i]; j++ ) {
                 pcurr = (Fluid*) (mBuf[0].data + m_Neighbor[i][j]*mBuf[0].stride);
@@ -619,6 +620,14 @@ void FluidSystem::SPH_ComputeForceGridNC ()
                 force.x += ( pterm * dx + vterm * (pcurr->vel_eval.x - p->vel_eval.x) ) * dterm;
                 force.y += ( pterm * dy + vterm * (pcurr->vel_eval.y - p->vel_eval.y) ) * dterm;
                 force.z += ( pterm * dz + vterm * (pcurr->vel_eval.z - p->vel_eval.z) ) * dterm;
+
+
+                // append to interfacial tension
+                
+                force.x += (K_W + K_ICE)*(pcurr->pos.x - p->pos.x)/(dx*dx);
+                //force.y += (K_W + K_ICE)*(pcurr->pos.y - p->pos.y)/(dy*dy);
+                //force.z += (K_W + K_ICE)*(pcurr->pos.z - p->pos.z)/(dz*dz);
+                
                 //new_temp += pcurr->temp*0.1;// temperature
             }
         } else {
@@ -630,9 +639,10 @@ void FluidSystem::SPH_ComputeForceGridNC ()
             }
 
 		}
+        std::cout << force.x << std::endl;
         p->sph_force = force;
 
-        if (p->adjacents < 6) { // surface particle
+        if (p->state == SOLID && p->adjacents < 6 || p->state == LIQUID) { // surface particle
             new_temp += AMBIENT_T*0.005;
         }
         p->temp += new_temp;
