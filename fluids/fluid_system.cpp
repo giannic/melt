@@ -39,8 +39,8 @@ FluidSystem::FluidSystem ()
     volmin_x = -20; volmin_y = -20; volmin_z = 0;
 	volmax_x = 20; volmax_y = 20; volmax_z = 40;
 
-	initmin_x = 0; initmin_y = 0; initmin_z = 0;
-	initmax_x = 20; initmax_y = 20; initmax_z = 20;
+	initmin_x = 0; initmin_y = 0; initmin_z = 1;
+	initmax_x = 20; initmax_y = 20; initmax_z = 21;
 }
 
 void FluidSystem::Initialize ( int mode, int total )
@@ -141,6 +141,7 @@ int FluidSystem::AddPointReuse ()
 	f->temp = 0.2;
     f->state = LIQUID;//SOLID;
     f->adjacents = 6;
+	f->mass = 1; // mucho problem?
 	return ndx;
 }
 
@@ -352,6 +353,9 @@ void FluidSystem::Advance ()
 		vnext *= m_DT/ss;
 		p->pos += vnext;						// p(t+1) = p(t) + v(t+1/2) dt
 
+		p->temp += p->temp_eval *m_DT;
+		p->temp *= m_DT/ss;
+
 		if ( m_Param[CLR_MODE]==1.0 ) {
 			adj = fabs(vnext.x)+fabs(vnext.y)+fabs(vnext.z) / 7000.0;
 			adj = (adj > 1.0) ? 1.0 : adj;
@@ -467,6 +471,8 @@ void FluidSystem::SPH_ComputeKernels ()
 	m_Poly6Kern = 315.0f / (64.0f * 3.141592 * pow( m_Param[SPH_SMOOTHRADIUS], 9) );	// Wpoly6 kernel (denominator part) - 2003 Muller, p.4
 	m_SpikyKern = -45.0f / (3.141592 * pow( m_Param[SPH_SMOOTHRADIUS], 6) );			// Laplacian of viscocity (denominator): PI h^6
 	m_LapKern = 45.0f / (3.141592 * pow( m_Param[SPH_SMOOTHRADIUS], 6) );
+	std::cout << "M_spikyKern" <<m_SpikyKern << std::endl;
+	std::cout << "M_SmoothRadius" << m_Param[SPH_SMOOTHRADIUS]<< std::endl;
 }
 
 void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cube
@@ -600,7 +606,9 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 
 	dat1_end = mBuf[0].data + NumPoints()*mBuf[0].stride;
 	i = 0;
-	
+	float ss = m_Param [ SPH_PDIST ]*0.87 / m_Param[ SPH_SIMSCALE ];
+
+	float m_SpikyKern_temp = (45.0f / (3.141592 * pow(ss, 6)));  //m_Param[SPH_SMOOTHRADIUS]
 	for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride, i++ ) {
 		p = (Fluid*) dat1;
 		force.Set (0, 0, 0);
@@ -621,13 +629,19 @@ void FluidSystem::SPH_ComputeForceGridNC ()
                 force.y += ( pterm * dy + vterm * (pcurr->vel_eval.y - p->vel_eval.y) ) * dterm;
                 force.z += ( pterm * dz + vterm * (pcurr->vel_eval.z - p->vel_eval.z) ) * dterm;
 
-
                 // append to interfacial tension
                 
-                force.x += (K_W + K_ICE)*(pcurr->pos.x - p->pos.x)/(dx*dx);
+                //force.x += (K_W + K_ICE)*(pcurr->pos.x - p->pos.x)/(dx*dx);
                 //force.y += (K_W + K_ICE)*(pcurr->pos.y - p->pos.y)/(dy*dy);
                 //force.z += (K_W + K_ICE)*(pcurr->pos.z - p->pos.z)/(dz*dz);
-                
+
+				Vector3DF diff = p->pos;
+				diff -= pcurr->pos;
+				float length = diff.Length();
+				float lap_kern = m_SpikyKern * (m_Param[SPH_SMOOTHRADIUS] - length);
+                //new_temp += m_Param [ SPH_PMASS ] * ((pcurr->temp - p->temp)/pcurr->density) * lap_kern;
+				//std::cout << "Diff" << pcurr->temp -  p->temp << std::endl;
+           
                 //new_temp += pcurr->temp*0.1;// temperature
             }
         } else {
@@ -635,16 +649,32 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 			force *= 1/m_Param[SPH_PMASS];
             for (int j=0; j < m_NC[i]; j++ ) {
                 pcurr = (Fluid*) (mBuf[0].data + m_Neighbor[i][j]*mBuf[0].stride);
-                new_temp += pcurr->temp*0.0001;// temperature
-            }
+				Vector3DF diff = p->pos;
+				diff -= pcurr->pos;
+				float length = diff.Length();
+				float lap_kern = m_SpikyKern * (m_Param[SPH_SMOOTHRADIUS] - length);
+				// Newtonian Heat Transfer
+				//new_temp += m_Param [ SPH_PMASS ]* ((pcurr->temp - p->temp)/pcurr->density) * lap_kern;
+				//std::cout << "Diff" << pcurr->temp -  p->temp << std::endl;          
+			}
 
 		}
-        std::cout << force.x << std::endl;
+        //std::cout << force.x << std::endl;
         p->sph_force = force;
-
-        if (p->state == SOLID && p->adjacents < 6 || p->state == LIQUID) { // surface particle
-            new_temp += AMBIENT_T*0.005;
-        }
         p->temp += new_temp;
+		//new_temp = diff_T * new_temp;
+		//std::cout << " Before New_temp " << new_temp << std::endl;
+		float q_air = 0.0;
+        if (p->state == SOLID && p->adjacents < 6 || p->state == LIQUID) { // surface particle
+			float area = ((6.0-p->adjacents)/6.0) * (ss * ss * 6.0);
+            q_air = heat_conduct * (AMBIENT_T - p->temp) * area;
+			new_temp += q_air / (heat_cap * m_Param [ SPH_PMASS ]);
+			//std::cout << "New_temp " << new_temp << std::endl;
+		} 
+//		new_temp = 10;
+        p->temp_eval = new_temp;
+		if (p->temp > 0.0001) {
+			p->state = LIQUID;
+		} 
 	}
 }

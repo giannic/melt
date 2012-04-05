@@ -42,6 +42,7 @@
 		Vector3DF		sph_force;
 
         float           temp;           // melting members
+		float			temp_eval;
         Status          state;          // true for solid, false for liuqid
         float           mass;
         int             adjacents;       // number of directly adjacent neighbors
