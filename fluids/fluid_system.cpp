@@ -470,7 +470,7 @@ void FluidSystem::SPH_ComputeKernels ()
 	std::cout << "M_SmoothRadius" << m_Param[SPH_SMOOTHRADIUS]<< std::endl;
 }
 
-void FluidSystem::AddVolume ( Vector3DF min, Vector3DF max, float spacing )
+void FluidSystem::AddVolume ( Vector3DF min, Vector3DF max, float spacing,VoxelGrid* vgrid )
 {
 	Vector3DF pos;
 	Point* p;
@@ -482,13 +482,13 @@ void FluidSystem::AddVolume ( Vector3DF min, Vector3DF max, float spacing )
 		for (float y = min.y; y <= max.y; y += spacing ) {	
 			for (float x = min.x; x <= max.x; x += spacing ) {
 				if(vgrid->inVoxelGrid(x,y,z)){
-				p = GetPoint ( AddPointReuse () );
-				pos.Set ( x, y, z);
-				//pos.x += -0.05 + float( rand() * 0.1 ) / RAND_MAX;
-				//pos.y += -0.05 + float( rand() * 0.1 ) / RAND_MAX;
-				//pos.z += -0.05 + float( rand() * 0.1 ) / RAND_MAX;
-				p->pos = pos;
-                p->clr = COLORA( (x-min.x)/dx, (y-min.y)/dy, (z-min.z)/dz, 1);
+					p = GetPoint ( AddPointReuse () );
+					pos.Set ( x, y, z);
+					//pos.x += -0.05 + float( rand() * 0.1 ) / RAND_MAX;
+					//pos.y += -0.05 + float( rand() * 0.1 ) / RAND_MAX;
+					//pos.z += -0.05 + float( rand() * 0.1 ) / RAND_MAX;
+					p->pos = pos;
+					p->clr = COLORA( (x-min.x)/dx, (y-min.y)/dy, (z-min.z)/dz, 1);
 
 				}
 			}
@@ -528,7 +528,7 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
 
 	float ss = m_Param [ SPH_PDIST ]*0.87 / m_Param[ SPH_SIMSCALE ];
 	//printf ( "Spacing: %f\n", ss);
-	AddVolume ( m_Vec[SPH_INITMIN], m_Vec[SPH_INITMAX], ss );	// Create the particles
+	AddVolume ( m_Vec[SPH_INITMIN], m_Vec[SPH_INITMAX], ss, vgrid );	// Create the particles
 
     Fluid* f;
 	Vector3DF pos;

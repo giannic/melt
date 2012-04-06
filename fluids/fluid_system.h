@@ -90,7 +90,7 @@
 		virtual int AddPointReuse ();
 		Fluid* AddFluid ()			{ return (Fluid*) GetElem(0, AddPointReuse()); }
 		Fluid* GetFluid (int n)		{ return (Fluid*) GetElem(0, n); }
-		void AddVolume(Vector3DF min, Vector3DF max, float spacing);
+		void AddVolume(Vector3DF min, Vector3DF max, float spacing, VoxelGrid* vgrid);
 
 		// Smoothed Particle Hydrodynamics
 		void SPH_Setup ();
