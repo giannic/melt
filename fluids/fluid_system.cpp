@@ -139,7 +139,7 @@ int FluidSystem::AddPointReuse ()
 	f->pressure = 0;
 	f->density = 0; 
 	f->temp = 0.2;
-    f->state = LIQUID;//SOLID;
+    f->state = SOLID;
     f->adjacents = 6;
 	f->mass = 1; // mucho problem?
 	return ndx;
@@ -353,8 +353,8 @@ void FluidSystem::Advance ()
 		vnext *= m_DT/ss;
 		p->pos += vnext;						// p(t+1) = p(t) + v(t+1/2) dt
 
-		p->temp += p->temp_eval *m_DT;
-		p->temp *= m_DT/ss;
+		//p->temp += p->temp_eval *m_DT;
+		//p->temp *= m_DT/ss;
 
 		if ( m_Param[CLR_MODE]==1.0 ) {
 			adj = fabs(vnext.x)+fabs(vnext.y)+fabs(vnext.z) / 7000.0;
@@ -630,34 +630,34 @@ void FluidSystem::SPH_ComputeForceGridNC ()
                 force.z += ( pterm * dz + vterm * (pcurr->vel_eval.z - p->vel_eval.z) ) * dterm;
 
                 // append to interfacial tension
-                
-                //force.x += (K_W + K_ICE)*(pcurr->pos.x - p->pos.x)/(dx*dx);
-                //force.y += (K_W + K_ICE)*(pcurr->pos.y - p->pos.y)/(dy*dy);
-                //force.z += (K_W + K_ICE)*(pcurr->pos.z - p->pos.z)/(dz*dz);
-
+                /*
+                force.x += (K_W + K_ICE)*(pcurr->pos.x - p->pos.x)/(dx*dx);
+                force.y += (K_W + K_ICE)*(pcurr->pos.y - p->pos.y)/(dy*dy);
+                force.z += (K_W + K_ICE)*(pcurr->pos.z - p->pos.z)/(dz*dz);
+                */
 				Vector3DF diff = p->pos;
 				diff -= pcurr->pos;
 				float length = diff.Length();
-				float lap_kern = m_SpikyKern * (m_Param[SPH_SMOOTHRADIUS] - length);
+				float lap_kern = m_LapKern * (m_Param[SPH_SMOOTHRADIUS] - length);
                 //new_temp += m_Param [ SPH_PMASS ] * ((pcurr->temp - p->temp)/pcurr->density) * lap_kern;
 				//std::cout << "Diff" << pcurr->temp -  p->temp << std::endl;
            
-                //new_temp += pcurr->temp*0.1;// temperature
+                new_temp += pcurr->temp*0.0001;// temperature
             }
         } else {
 		    force -= m_Vec[PLANE_GRAV_DIR];
-			force *= 1/m_Param[SPH_PMASS];
+			force /= m_Param[SPH_PMASS];
             for (int j=0; j < m_NC[i]; j++ ) {
                 pcurr = (Fluid*) (mBuf[0].data + m_Neighbor[i][j]*mBuf[0].stride);
 				Vector3DF diff = p->pos;
 				diff -= pcurr->pos;
 				float length = diff.Length();
-				float lap_kern = m_SpikyKern * (m_Param[SPH_SMOOTHRADIUS] - length);
+				float lap_kern = m_LapKern  * (m_Param[SPH_SMOOTHRADIUS] - length);
 				// Newtonian Heat Transfer
 				//new_temp += m_Param [ SPH_PMASS ]* ((pcurr->temp - p->temp)/pcurr->density) * lap_kern;
+                new_temp += pcurr->temp*0.0001;// temperature
 				//std::cout << "Diff" << pcurr->temp -  p->temp << std::endl;          
 			}
-
 		}
         //std::cout << force.x << std::endl;
         p->sph_force = force;
@@ -671,12 +671,12 @@ void FluidSystem::SPH_ComputeForceGridNC ()
             q_air = heat_conduct * (AMBIENT_T - p->temp) * area;
 			//std::cout << "P->temp " << p->temp << std::endl;
 			float air_change = q_air / (heat_cap * m_Param [ SPH_PMASS ]);
-			new_temp += air_change;
+			p->temp += air_change;
 			//std::cout << "Air Change " << air_change << std::endl;
 		} 
-//		new_temp = 10;
-        p->temp_eval = new_temp;
-		if (p->temp > 0.5) {
+
+        p->temp_eval = p->temp;
+		if (p->temp > 0.9) {
 			p->state = LIQUID;
 		} 
 	}
