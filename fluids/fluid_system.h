@@ -30,6 +30,7 @@
 	#include <stdlib.h>
 	#include <math.h>
 
+	#include "../voxel_grid.h"
 	#include "point_set.h"
 	#include "fluid.h"
     #include "../my_defs.h"
@@ -89,7 +90,8 @@
 		virtual int AddPointReuse ();
 		Fluid* AddFluid ()			{ return (Fluid*) GetElem(0, AddPointReuse()); }
 		Fluid* GetFluid (int n)		{ return (Fluid*) GetElem(0, n); }
-		
+		void AddVolume(Vector3DF min, Vector3DF max, float spacing);
+
 		// Smoothed Particle Hydrodynamics
 		void SPH_Setup ();
 		void SPH_CreateExample ( int n, int nmax );
@@ -99,6 +101,7 @@
 		void SPH_ComputePressureGrid ();			// O(kn) - spatial grid
 		void SPH_ComputeForceGridNC ();				// O(cn) - neighbor table
 		
+		VoxelGrid* vgrid;
 	private:
 
 		// Smoothed Particle Hydrodynamics

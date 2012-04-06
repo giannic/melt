@@ -205,10 +205,6 @@
 				RelativePath=".\fluids\fluid_system.h"
 				>
 			</File>
-			<File
-				RelativePath=".\my_defs.h"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="common"
@@ -274,6 +270,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\my_defs.h"
+				>
+			</File>
+			<File
 				RelativePath=".\common\point_set.cpp"
 				>
 			</File>
@@ -295,6 +295,18 @@
 			</File>
 			<File
 				RelativePath=".\common\vector.h"
+				>
+			</File>
+			<File
+				RelativePath=".\common\voxel_file_format.h"
+				>
+			</File>
+			<File
+				RelativePath=".\voxel_grid.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\voxel_grid.h"
 				>
 			</File>
 		</Filter>

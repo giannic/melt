@@ -36,11 +36,6 @@
 
 FluidSystem::FluidSystem ()
 {
-    volmin_x = -20; volmin_y = -20; volmin_z = 0;
-	volmax_x = 20; volmax_y = 20; volmax_z = 40;
-
-	initmin_x = 0; initmin_y = 0; initmin_z = 1;
-	initmax_x = 20; initmax_y = 20; initmax_z = 21;
 }
 
 void FluidSystem::Initialize ( int mode, int total )
@@ -458,8 +453,8 @@ void FluidSystem::SPH_Setup ()
 	m_Param [ SPH_EXTDAMP ] =		256.0;
 	m_Param [ SPH_LIMIT ] =			200.0;			// m / s
 
-	m_Toggle [ SPH_GRID ] =		false;
-	m_Toggle [ SPH_DEBUG ] =	false;
+	m_Toggle [ SPH_GRID ] =		true; false;
+	m_Toggle [ SPH_DEBUG ] =	true; false;
 
 	SPH_ComputeKernels ();
 }
@@ -473,6 +468,32 @@ void FluidSystem::SPH_ComputeKernels ()
 	m_LapKern = 45.0f / (3.141592 * pow( m_Param[SPH_SMOOTHRADIUS], 6) );
 	std::cout << "M_spikyKern" <<m_SpikyKern << std::endl;
 	std::cout << "M_SmoothRadius" << m_Param[SPH_SMOOTHRADIUS]<< std::endl;
+}
+
+void FluidSystem::AddVolume ( Vector3DF min, Vector3DF max, float spacing )
+{
+	Vector3DF pos;
+	Point* p;
+	float dx, dy, dz;
+	dx = max.x-min.x;
+	dy = max.y-min.y;
+	dz = max.z-min.z;
+	for (float z = max.z; z >= min.z; z -= spacing ) {
+		for (float y = min.y; y <= max.y; y += spacing ) {	
+			for (float x = min.x; x <= max.x; x += spacing ) {
+				if(vgrid->inVoxelGrid(x,y,z)){
+				p = GetPoint ( AddPointReuse () );
+				pos.Set ( x, y, z);
+				//pos.x += -0.05 + float( rand() * 0.1 ) / RAND_MAX;
+				//pos.y += -0.05 + float( rand() * 0.1 ) / RAND_MAX;
+				//pos.z += -0.05 + float( rand() * 0.1 ) / RAND_MAX;
+				p->pos = pos;
+                p->clr = COLORA( (x-min.x)/dx, (y-min.y)/dy, (z-min.z)/dz, 1);
+
+				}
+			}
+		}
+	}
 }
 
 void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cube
@@ -490,6 +511,16 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
 		m_Vec [ SPH_INITMIN ].Set ( initmin_x, initmin_y, initmin_z);
 		m_Vec [ SPH_INITMAX ].Set ( initmax_x, initmax_y, initmax_z);
 		break;
+	case 1:
+		std::cout << " Testing Load " << std::endl;
+		// Testing loading dragon
+		m_Vec [ SPH_VOLMIN ].Set ( VOLMIN_X, VOLMIN_Y, VOLMIN_Z );
+		m_Vec [ SPH_VOLMAX ].Set ( VOLMAX_X, VOLMAX_Y, VOLMAX_Z );
+		m_Vec [ SPH_INITMIN ].Set ( INITMIN_X, INITMIN_Y, INITMIN_Z);
+		m_Vec [ SPH_INITMAX ].Set ( INITMAX_X, INITMAX_Y, INITMAX_Z );
+		vgrid = new VoxelGrid("voxel/dragon_120.voxels");
+
+	break;
 	}
 
 	m_Param [ SPH_SIMSIZE ] = m_Param [ SPH_SIMSCALE ] * (m_Vec[SPH_VOLMAX].z - m_Vec[SPH_VOLMIN].z);
@@ -668,10 +699,15 @@ void FluidSystem::SPH_ComputeForceGridNC ()
         if (p->state == SOLID && p->adjacents < 6 || p->state == LIQUID) { // surface particle
 			// Surface particle
 			float area = ((6.0-p->adjacents)/6.0) * (ss * ss * 6.0);
-            q_air = heat_conduct * (AMBIENT_T - p->temp) * area;
+            q_air = HEAT_CONDUCT * (AMBIENT_T - p->temp) * area;
 			//std::cout << "P->temp " << p->temp << std::endl;
+<<<<<<< HEAD
 			float air_change = q_air / (heat_cap * m_Param [ SPH_PMASS ]);
 			p->temp += air_change;
+=======
+			float air_change = q_air / (HEAT_CAP * m_Param [ SPH_PMASS ]);
+			new_temp += air_change;
+>>>>>>> 2cae4da934535cf496fd4a2bc2cd60edfd621e89
 			//std::cout << "Air Change " << air_change << std::endl;
 		} 
 
