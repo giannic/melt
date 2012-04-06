@@ -37,6 +37,7 @@
 		Vector3DF		vel_eval; 
 		unsigned short	age;
 
+        Vector3DI       index;
 		float			pressure;		// Smoothed Particle Hydrodynamics
 		float			density;
 		Vector3DF		sph_force;
@@ -45,7 +46,6 @@
 		float			temp_eval;
         Status          state;          // true for solid, false for liuqid
         float           mass;
-        int             adjacents;       // number of directly adjacent neighbors
 	};
 
 #endif /*PARTICLE_H_*/

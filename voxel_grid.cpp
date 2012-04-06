@@ -43,32 +43,30 @@ void VoxelGrid::loadGrid(const char* filename) {
 		offset[1] = object_hdr.model_offset[1]+ADJUST_OFFSET_Y;
 		offset[2] = object_hdr.model_offset[2]+ADJUST_OFFSET_Z;
 
-
-
 		printf("Loading Voxel Grid...");
 		printf("Resolution %d x %d x %d \n",theDim[0],theDim[1],theDim[2]);
 		printf("Voxel Size %f x %f x %f \n",voxelSize[0],voxelSize[1],voxelSize[2]);
 		printf("Scale Factor %f x %f x %f \n",scaleFactor[0],scaleFactor[1],scaleFactor[2]);
 		printf("Origin Offset %f x %f x %f \n",offset[0],offset[1],offset[2]);
 		
-		/*data = new bool**[theDim[0]];
-		for(int i=0;i<theDim[0];i++){
-			data[i] = new bool*[theDim[1]];
-			for(int j=0;j<theDim[1];j++){
-				data[i][j] = new bool[theDim[2]];
-				for(int k=0;k<theDim[2];k++){
+		data = new bool**[theDim[0]];
+		for (int i = 0; i < theDim[0]; i++) {
+			data[i] = new bool*[theDim[2]];
+			for (int j = 0; j < theDim[2]; j++) {
+				data[i][j] = new bool[theDim[1]];
+				for (int k = 0; k < theDim[1]; k++) {
 					data[i][j][k] = false;
 				}
 			}
-		}*/
+		}
 
-		data = new bool**[theDim[0]];
-		for(int i=0;i<theDim[0];i++){
-			data[i] = new bool*[theDim[2]];
-			for(int j=0;j<theDim[2];j++){
-				data[i][j] = new bool[theDim[1]];
-				for(int k=0;k<theDim[1];k++){
-					data[i][j][k] = false;
+		adj = new short**[theDim[0]];
+		for (int i = 0; i < theDim[0]; i++) {
+			adj[i] = new short*[theDim[2]];
+			for (int j = 0; j < theDim[2]; j++) {
+				adj[i][j] = new short[theDim[1]];
+				for (int k = 0; k < theDim[1]; k++) {
+					adj[i][j][k] = 0; // all sides have ice
 				}
 			}
 		}
@@ -102,15 +100,17 @@ Vector3DF VoxelGrid::getCellCenter(int i, int j, int k)
 	return Vector3DF(x,y,z);
 }
 
-bool VoxelGrid::inVoxelGrid(double x, double y, double z) {
+Vector3DF VoxelGrid::inVoxelGrid(double x, double y, double z) {
 	int i = (x-offset[0])/voxelSize[0];
-	int j = (y-offset[1])/voxelSize[2];
+	int j = (y-offset[1])/voxelSize[2]; // intentional switch of axis
 	int k = (z-offset[2])/voxelSize[1];
 	
-	if(i < 0 || j < 0 || k < 0 ||
-	   i > theDim[0]-1 || j > theDim[2]-1 || k > theDim[1]-1)
-		return false;
+	if (i < 0 || j < 0 || k < 0 || i > theDim[0]-1 || j > theDim[2]-1 || k > theDim[1]-1)
+		return Vector3DF(-1.0, -1.0, -1.0);
 
 	//std::cout << "(" << i << "," << j << "," << k << ")" << std::endl;
-	return data[i][j][k];
+    if(data[i][j][k])
+        return Vector3DF(i,j,k);
+    else 
+        return Vector3DF(-1.0, -1.0, -1.0);
 }

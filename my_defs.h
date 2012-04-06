@@ -33,7 +33,7 @@ static const float INITMAX_Z = 60;
 // Init fluid system with OBJ
 #define ADJUST_SCALE  1.6
 #define ADJUST_OFFSET_X -15//-30
-#define ADJUST_OFFSET_Y 0//-10
-#define ADJUST_OFFSET_Z 5//-30
+#define ADJUST_OFFSET_Y -10//-10
+#define ADJUST_OFFSET_Z 1//-30
 
 #endif MYDEFS

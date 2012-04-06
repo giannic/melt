@@ -113,7 +113,6 @@ int FluidSystem::AddPoint ()
     f->temp = 0.2;
     f->state = LIQUID; //SOLID;
     f->mass = 0; // mucho problem?
-    f->adjacents = 6;
 	return ndx;
 }
 
@@ -135,7 +134,6 @@ int FluidSystem::AddPointReuse ()
 	f->density = 0; 
 	f->temp = 0.2;
     f->state = SOLID;
-    f->adjacents = 6;
 	f->mass = 1; // mucho problem?
 	return ndx;
 }
@@ -348,7 +346,7 @@ void FluidSystem::Advance ()
 		vnext *= m_DT/ss;
 		p->pos += vnext;						// p(t+1) = p(t) + v(t+1/2) dt
 
-		//p->temp += p->temp_eval *m_DT;
+		p->temp += p->temp_eval *m_DT;
 		//p->temp *= m_DT/ss;
 
 		if ( m_Param[CLR_MODE]==1.0 ) {
@@ -466,14 +464,14 @@ void FluidSystem::SPH_ComputeKernels ()
 	m_Poly6Kern = 315.0f / (64.0f * 3.141592 * pow( m_Param[SPH_SMOOTHRADIUS], 9) );	// Wpoly6 kernel (denominator part) - 2003 Muller, p.4
 	m_SpikyKern = -45.0f / (3.141592 * pow( m_Param[SPH_SMOOTHRADIUS], 6) );			// Laplacian of viscocity (denominator): PI h^6
 	m_LapKern = 45.0f / (3.141592 * pow( m_Param[SPH_SMOOTHRADIUS], 6) );
-	std::cout << "M_spikyKern" <<m_SpikyKern << std::endl;
-	std::cout << "M_SmoothRadius" << m_Param[SPH_SMOOTHRADIUS]<< std::endl;
+	//std::cout << "M_spikyKern" <<m_SpikyKern << std::endl;
+	//std::cout << "M_SmoothRadius" << m_Param[SPH_SMOOTHRADIUS]<< std::endl;
 }
 
 void FluidSystem::AddVolume ( Vector3DF min, Vector3DF max, float spacing,VoxelGrid* vgrid )
 {
 	Vector3DF pos;
-	Point* p;
+	Fluid* p;
 	float dx, dy, dz;
 	dx = max.x-min.x;
 	dy = max.y-min.y;
@@ -481,9 +479,11 @@ void FluidSystem::AddVolume ( Vector3DF min, Vector3DF max, float spacing,VoxelG
 	for (float z = max.z; z >= min.z; z -= spacing ) {
 		for (float y = min.y; y <= max.y; y += spacing ) {	
 			for (float x = min.x; x <= max.x; x += spacing ) {
-				if(vgrid->inVoxelGrid(x,y,z)){
-					p = GetPoint ( AddPointReuse () );
+                Vector3DF index = vgrid->inVoxelGrid(x,y,z);
+				if(index.x > 0 && index.y > 0 && index.z > 0){
+					p = (Fluid*)GetPoint ( AddPointReuse () );
 					pos.Set ( x, y, z);
+                    p->index = index;
 					//pos.x += -0.05 + float( rand() * 0.1 ) / RAND_MAX;
 					//pos.y += -0.05 + float( rand() * 0.1 ) / RAND_MAX;
 					//pos.z += -0.05 + float( rand() * 0.1 ) / RAND_MAX;
@@ -501,27 +501,44 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
 	Vector3DF min, max;
 	
 	Reset ( nmax );
+
+    m_Vec [ SPH_VOLMIN ].Set ( VOLMIN_X, VOLMIN_Y, VOLMIN_Z );
+    m_Vec [ SPH_VOLMAX ].Set ( VOLMAX_X, VOLMAX_Y, VOLMAX_Z );
+    m_Vec [ SPH_INITMIN ].Set ( INITMIN_X, INITMIN_Y, INITMIN_Z );
+    m_Vec [ SPH_INITMAX ].Set ( INITMAX_X, INITMAX_Y, INITMAX_Z );
 	
 	switch ( n ) {
-	case 0:		// Wave pool
+    case 0:
 		// Basic cube
-	    m_Vec [ SPH_VOLMIN ].Set ( volmin_x, volmin_y, volmin_z );
-		m_Vec [ SPH_VOLMAX ].Set ( volmax_x, volmax_y, volmax_z);
-		
-		m_Vec [ SPH_INITMIN ].Set ( initmin_x, initmin_y, initmin_z);
-		m_Vec [ SPH_INITMAX ].Set ( initmax_x, initmax_y, initmax_z);
 		break;
 	case 1:
-		std::cout << " Testing Load " << std::endl;
+		//std::cout << " Testing Load " << std::endl;
 		// Testing loading dragon
-		m_Vec [ SPH_VOLMIN ].Set ( VOLMIN_X, VOLMIN_Y, VOLMIN_Z );
-		m_Vec [ SPH_VOLMAX ].Set ( VOLMAX_X, VOLMAX_Y, VOLMAX_Z );
-		m_Vec [ SPH_INITMIN ].Set ( INITMIN_X, INITMIN_Y, INITMIN_Z);
-		m_Vec [ SPH_INITMAX ].Set ( INITMAX_X, INITMAX_Y, INITMAX_Z );
 		vgrid = new VoxelGrid("voxel/dragon_120.voxels");
-
 	break;
 	}
+
+    // init our adjacency list
+    short neighbors;
+    vgrid->adj[1][1][1] = 0;
+    for (int i = 0; i < vgrid->theDim[0]; i++) {
+        for (int j = 0; j < vgrid->theDim[2]; j++) {
+            for (int k = 0; k < vgrid->theDim[1]; k++) {
+                neighbors = 0;
+                if (vgrid->data[i][j][k]) { // if there is a voxel in that location
+                    if (i > 0 && vgrid->data[i-1][j][k]) neighbors++;
+                    if (i < vgrid->theDim[0] - 1 && vgrid->data[i+1][j][k]) neighbors++;
+                    if (j > 0 && vgrid->data[i][j-1][k]) neighbors++;
+                    if (j < vgrid->theDim[1] - 1 && vgrid->data[i][j+1][k]) neighbors++;
+                    if (k > 0 && vgrid->data[i][j][k-1]) neighbors++;
+                    if (k < vgrid->theDim[2] - 1 && vgrid->data[i][j][k+1]) neighbors++;
+                } else {
+                    neighbors = -1; //error state
+                }
+                vgrid->adj[i][j][k] = neighbors;
+            }
+        }
+    }
 
 	m_Param [ SPH_SIMSIZE ] = m_Param [ SPH_SIMSCALE ] * (m_Vec[SPH_VOLMAX].z - m_Vec[SPH_VOLMIN].z);
 	m_Param [ SPH_PDIST ] = pow ( m_Param[SPH_PMASS] / m_Param[SPH_RESTDENSITY], 1/3.0 );
@@ -532,23 +549,6 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
 
     Fluid* f;
 	Vector3DF pos;
-    char *dat, *dat_end = mBuf[0].data + NumPoints()*mBuf[0].stride;
-	for ( dat = mBuf[0].data; dat < dat_end; dat += mBuf[0].stride) {
-		f = (Fluid*) dat;
-        pos = f->pos;
-
-        if (pos.x < m_Vec[SPH_INITMIN].x + ss || pos.x > m_Vec[SPH_INITMAX].x - ss ) {
-            f->adjacents--;
-        }
-
-        if (pos.y < m_Vec[SPH_INITMIN].y + ss || pos.y > m_Vec[SPH_INITMAX].y - ss ) {
-            f->adjacents--;
-        }
-
-        if (pos.z < m_Vec[SPH_INITMIN].z + ss || pos.z > m_Vec[SPH_INITMAX].z - ss ) {
-            f->adjacents--;
-        }
-    }
 
 	float cell_size = m_Param[SPH_SMOOTHRADIUS]*2.0;			// Grid cell size (2r)
 	Grid_Setup ( m_Vec[SPH_VOLMIN], m_Vec[SPH_VOLMAX], m_Param[SPH_SIMSCALE], cell_size, 1.0 ); // Setup grid
@@ -628,7 +628,10 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 	float c, d;
 	float dx, dy, dz;
 	float mR, mR2, visc;
+    float length, lap_kern;
+    float area, q_air, air_change;
     float new_temp = 0.0;
+    int pi, pj, pk;
 
 	d = m_Param[SPH_SIMSCALE];
 	mR = m_Param[SPH_SMOOTHRADIUS];
@@ -668,8 +671,8 @@ void FluidSystem::SPH_ComputeForceGridNC ()
                 */
 				Vector3DF diff = p->pos;
 				diff -= pcurr->pos;
-				float length = diff.Length();
-				float lap_kern = m_LapKern * (m_Param[SPH_SMOOTHRADIUS] - length);
+				length = diff.Length();
+				lap_kern = m_LapKern * (m_Param[SPH_SMOOTHRADIUS] - length);
                 //new_temp += m_Param [ SPH_PMASS ] * ((pcurr->temp - p->temp)/pcurr->density) * lap_kern;
 				//std::cout << "Diff" << pcurr->temp -  p->temp << std::endl;
            
@@ -682,8 +685,8 @@ void FluidSystem::SPH_ComputeForceGridNC ()
                 pcurr = (Fluid*) (mBuf[0].data + m_Neighbor[i][j]*mBuf[0].stride);
 				Vector3DF diff = p->pos;
 				diff -= pcurr->pos;
-				float length = diff.Length();
-				float lap_kern = m_LapKern  * (m_Param[SPH_SMOOTHRADIUS] - length);
+				length = diff.Length();
+				lap_kern = m_LapKern  * (m_Param[SPH_SMOOTHRADIUS] - length);
 				// Newtonian Heat Transfer
 				//new_temp += m_Param [ SPH_PMASS ]* ((pcurr->temp - p->temp)/pcurr->density) * lap_kern;
                 new_temp += pcurr->temp*0.0001;// temperature
@@ -695,20 +698,53 @@ void FluidSystem::SPH_ComputeForceGridNC ()
         p->temp += new_temp;
 		//new_temp = diff_T * new_temp;
 		//std::cout << " Before New_temp " << new_temp << std::endl;
-		float q_air = 0.0;
-        if (p->state == SOLID && p->adjacents < 6 || p->state == LIQUID) { // surface particle
+		q_air = 0.0;
+
+        pi = p->index.x;
+        pj = p->index.y;
+        pk = p->index.z;
+
+        if (p->state == SOLID && vgrid->adj[pi][pj][pk] || p->state == LIQUID) { // surface particle
 			// Surface particle
-			float area = ((6.0-p->adjacents)/6.0) * (ss * ss * 6.0);
+			area = ((6.0 - vgrid->adj[pi][pj][pk])/6.0) * (ss * ss * 6.0);
             q_air = HEAT_CONDUCT * (AMBIENT_T - p->temp) * area;
 			//std::cout << "P->temp " << p->temp << std::endl;
-			float air_change = q_air / (heat_cap * m_Param [ SPH_PMASS ]);
+			air_change = q_air / (HEAT_CAP * m_Param [ SPH_PMASS ]);
 			p->temp += air_change;
 			//std::cout << "Air Change " << air_change << std::endl;
 		} 
 
         p->temp_eval = p->temp;
-		if (p->temp > 0.9) {
-			p->state = LIQUID;
+		if (p->temp > 0.5) {
+            if ( p->state == SOLID) {
+                if (pi + 1 < vgrid->theDim[0]) {
+                    vgrid->adj[pi+1][pj][pk]--;
+                }
+
+                if (pi - 1 < vgrid->theDim[0]) {
+                    vgrid->adj[pi-1][pj][pk]--;
+                }
+
+                if (pj + 1 < vgrid->theDim[1]) {
+                    vgrid->adj[pi][pj+1][pk]--;
+                }
+
+                if (pj - 1 < vgrid->theDim[1]) {
+                    vgrid->adj[pi][pj-1][pk]--;
+                }
+
+                if (pk + 1 < vgrid->theDim[2]) {
+                    vgrid->adj[pi][pj][pk+1]--;
+                }
+
+                if (pk - 1 < vgrid->theDim[2]) {
+                    vgrid->adj[pi][pj][pk-1]--;
+                }
+//                if (p->index.x + 1 < 
+                // update the neighbors adjacency values
+
+                p->state = LIQUID;
+            }
 		} 
 	}
 }
