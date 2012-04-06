@@ -701,13 +701,8 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 			float area = ((6.0-p->adjacents)/6.0) * (ss * ss * 6.0);
             q_air = HEAT_CONDUCT * (AMBIENT_T - p->temp) * area;
 			//std::cout << "P->temp " << p->temp << std::endl;
-<<<<<<< HEAD
 			float air_change = q_air / (heat_cap * m_Param [ SPH_PMASS ]);
 			p->temp += air_change;
-=======
-			float air_change = q_air / (HEAT_CAP * m_Param [ SPH_PMASS ]);
-			new_temp += air_change;
->>>>>>> 2cae4da934535cf496fd4a2bc2cd60edfd621e89
 			//std::cout << "Air Change " << air_change << std::endl;
 		} 
 
