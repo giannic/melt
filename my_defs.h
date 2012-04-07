@@ -1,13 +1,15 @@
 #ifndef MYDEFS
 #define MYDEFS
 
-#define AMBIENT_T 1.0
-#define MIN_T 0.0
-#define MAX_T 1.0
-
 // State of particle
 enum Status { SOLID, LIQUID};
+
+static const float AMBIENT_T = 1.0;
 static const float diff_T = 0.5;
+static const float MIN_T = 0.0;
+static const float MAX_T = 1.0;
+static const float K_W = 0.00000001;
+static const float K_ICE = 0.000002;
 static const float HEAT_CONDUCT = 0.001;
 static const float HEAT_CAP = 15;
 
@@ -31,7 +33,7 @@ static const float INITMAX_Z = 60;
 // Init fluid system with OBJ
 #define ADJUST_SCALE  1.6
 #define ADJUST_OFFSET_X -15//-30
-#define ADJUST_OFFSET_Y 0//-10
-#define ADJUST_OFFSET_Z 5//-30
+#define ADJUST_OFFSET_Y -10//-10
+#define ADJUST_OFFSET_Z 1//-30
 
 #endif MYDEFS
