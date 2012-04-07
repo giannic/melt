@@ -477,10 +477,10 @@ void mouse_move_func ( int x, int y )
 		if ( dragging == DRAG_LEFT ) {
 			light[0].x -= dx*.1;
 			light[0].y += dy*.1;		
-			printf ( "Light: %f %f %f\n", light[0].x, light[0].y, light[0].z );
+			//printf ( "Light: %f %f %f\n", light[0].x, light[0].y, light[0].z );
 		} else if (dragging == DRAG_RIGHT) {
 			light[0].z -= dy*.1;			
-			printf ( "Light: %f %f %f\n", light[0].x, light[0].y, light[0].z );
+			//printf ( "Light: %f %f %f\n", light[0].x, light[0].y, light[0].z );
 		}	
 		#ifdef USE_SHADOWS
 			setShadowLight ( light[0].x, light[0].y, light[0].z, light_to[0].x, light_to[0].y, light_to[0].z, light_fov );

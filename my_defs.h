@@ -4,13 +4,14 @@
 // State of particle
 enum Status { SOLID, LIQUID};
 
-static const float AMBIENT_T = 1.0;
-static const float diff_T = 0.5;
-static const float MIN_T = 0.0;
-static const float MAX_T = 1.0;
-static const float K_W = 0.00000001;
-static const float K_ICE = 0.000002;
-static const float HEAT_CONDUCT = 0.001;
+static const float AMBIENT_T = 296;
+static const float DIFF_T = 0.5;
+static const float MIN_T = 273.15;
+static const float MAX_T = 373.15;
+static const float K_W = 0.1;
+static const float K_ICE = 0.2;
+static const float THERMAL_CONDUCTIVITY_ICE = 2.18;// in watts per meter kelvin
+static const float THERMAL_CONDUCTIVITY_WATER = 0.58;// in watts per meter kelvin
 static const float HEAT_CAP = 15;
 
 // Init fluid system

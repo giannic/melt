@@ -363,29 +363,44 @@ void FluidSystem::Advance ()
 
 		if (m_Param[CLR_MODE] == 0.0) {
 			float v = p->temp;
-
+            float dv = MAX_T - MIN_T;
             float rgba[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-            float dv;
 
-            if (v < MIN_T)
-                v = MIN_T;
-            if (v > MAX_T)
-                v = MAX_T;
-            dv = MAX_T - MIN_T;
+            if (v < MIN_T) v = MIN_T;
+            if (v > MAX_T) v = MAX_T;
 
+            if (v < (MIN_T + 0.25 * dv)) {
+                rgba[0] = 0.0; //no red
+                rgba[1] = (v - MIN_T) / dv; // interpolate greens
+            } else if (v < (MIN_T + 0.5 * dv)) {
+                rgba[0] = 0.0; //no red
+                rgba[2] = (v - (MIN_T + 0.25*dv)) / dv; // interpolate blues
+            } else if (v < (MIN_T + 0.75 * dv)) {
+                rgba[2] = 0.0; //no blue
+                rgba[1] = (v - (MIN_T + 0.5*dv)) / dv; // interpolate greens
+            } else {
+                rgba[2] = 0.0; //no blue
+                rgba[1] = (v - (MIN_T + 0.75*dv)) / dv; // interpolate greens
+            }
+/*
             if (v < (MIN_T + 0.25 * dv)) {
                 rgba[0] = 0.0;
                 rgba[1] = 4 * (v - MIN_T) / dv;
+                //rgba[1] = (v - MIN_T) / dv;
             } else if (v < (MIN_T + 0.5 * dv)) {
                 rgba[0] = 0.0;
                 rgba[2] = 1.0 + 4.0 * (MIN_T + 0.25 * dv - v) / dv;
+                //rgba[2] = (MIN_T + 0.25 * dv - v) / dv;
             } else if (v < (MIN_T + 0.75 * dv)) {
                 rgba[0] = 4.0 * (v - MIN_T - 0.5 * dv) / dv;
+                //rgba[0] = (v - MIN_T - 0.5 * dv) / dv;
                 rgba[2] = 0.0;
             } else {
                 rgba[1] = 1.0 + 4.0 * (MIN_T + 0.75 * dv - v) / dv;
+                //rgba[1] = (MIN_T + 0.75 * dv - v) / dv;
                 rgba[2] = 0.0;
             }
+*/
             p->clr = COLORA(rgba[0], rgba[1], rgba[2], rgba[3]);
         }
 
@@ -620,18 +635,18 @@ void FluidSystem::SPH_ComputePressureGrid ()
 void FluidSystem::SPH_ComputeForceGridNC ()
 {
 	char *dat1, *dat1_end;	
-	Fluid *p;
-	Fluid *pcurr;
+	Fluid *p, *pcurr;
 	Vector3DF force, fcurr;
 	register float pterm, vterm, dterm;
 	int i;
+    float edge;
 	float c, d;
 	float dx, dy, dz;
 	float mR, mR2, visc;
     float length, lap_kern;
-    float area, q_air, air_change;
-    float new_temp = 0.0;
-    int pi, pj, pk;
+    float neighbor_temp; // new additions to temperature by other particles
+    float sa, Qi, dT; // air contribution to new temperature
+    int pi, pj, pk; 
 
 	d = m_Param[SPH_SIMSCALE];
 	mR = m_Param[SPH_SMOOTHRADIUS];
@@ -639,112 +654,75 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 	visc = m_Param[SPH_VISC];
 
 	dat1_end = mBuf[0].data + NumPoints()*mBuf[0].stride;
-	i = 0;
-	float ss = m_Param [ SPH_PDIST ]*0.87 / m_Param[ SPH_SIMSCALE ];
 
-	float m_SpikyKern_temp = (45.0f / (3.141592 * pow(ss, 6)));  //m_Param[SPH_SMOOTHRADIUS]
+	edge = m_Param [ SPH_PDIST ]*0.87 / m_Param[ SPH_SIMSCALE ];
+    i = 0;
 	for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride, i++ ) {
+        // reset all instance variables
 		p = (Fluid*) dat1;
 		force.Set (0, 0, 0);
-        new_temp = 0.0;
-
-		if (p->state == LIQUID) {
-            for (int j=0; j < m_NC[i]; j++ ) {
-                pcurr = (Fluid*) (mBuf[0].data + m_Neighbor[i][j]*mBuf[0].stride);
-                dx = ( p->pos.x - pcurr->pos.x)*d;		// dist in cm
-                dy = ( p->pos.y - pcurr->pos.y)*d;
-                dz = ( p->pos.z - pcurr->pos.z)*d;				
-                c = ( mR - m_NDist[i][j] ); //distance between current and neighbor?
-                pterm = -0.5f * c * m_SpikyKern * ( p->pressure + pcurr->pressure) / m_NDist[i][j];
-                dterm = c * p->density * pcurr->density;
-                vterm = m_LapKern * visc;
-			
-                force.x += ( pterm * dx + vterm * (pcurr->vel_eval.x - p->vel_eval.x) ) * dterm;
-                force.y += ( pterm * dy + vterm * (pcurr->vel_eval.y - p->vel_eval.y) ) * dterm;
-                force.z += ( pterm * dz + vterm * (pcurr->vel_eval.z - p->vel_eval.z) ) * dterm;
-
-                // append to interfacial tension
-                /*
-                force.x += (K_W + K_ICE)*(pcurr->pos.x - p->pos.x)/(dx*dx);
-                force.y += (K_W + K_ICE)*(pcurr->pos.y - p->pos.y)/(dy*dy);
-                force.z += (K_W + K_ICE)*(pcurr->pos.z - p->pos.z)/(dz*dz);
-                */
-				Vector3DF diff = p->pos;
-				diff -= pcurr->pos;
-				length = diff.Length();
-				lap_kern = m_LapKern * (m_Param[SPH_SMOOTHRADIUS] - length);
-                //new_temp += m_Param [ SPH_PMASS ] * ((pcurr->temp - p->temp)/pcurr->density) * lap_kern;
-				//std::cout << "Diff" << pcurr->temp -  p->temp << std::endl;
-           
-                new_temp += pcurr->temp*0.0001;// temperature
-            }
-        } else {
-		    force -= m_Vec[PLANE_GRAV_DIR];
-			force /= m_Param[SPH_PMASS];
-            for (int j=0; j < m_NC[i]; j++ ) {
-                pcurr = (Fluid*) (mBuf[0].data + m_Neighbor[i][j]*mBuf[0].stride);
-				Vector3DF diff = p->pos;
-				diff -= pcurr->pos;
-				length = diff.Length();
-				lap_kern = m_LapKern  * (m_Param[SPH_SMOOTHRADIUS] - length);
-				// Newtonian Heat Transfer
-				//new_temp += m_Param [ SPH_PMASS ]* ((pcurr->temp - p->temp)/pcurr->density) * lap_kern;
-                new_temp += pcurr->temp*0.0001;// temperature
-				//std::cout << "Diff" << pcurr->temp -  p->temp << std::endl;          
-			}
-		}
-        //std::cout << force.x << std::endl;
-        p->sph_force = force;
-        p->temp += new_temp;
-		//new_temp = diff_T * new_temp;
-		//std::cout << " Before New_temp " << new_temp << std::endl;
-		q_air = 0.0;
-
+		neighbor_temp = 0.0; sa = 0.0; Qi = 0.0;
         pi = p->index.x;
         pj = p->index.y;
         pk = p->index.z;
 
-        if (p->state == SOLID && vgrid->adj[pi][pj][pk] || p->state == LIQUID) { // surface particle
-			// Surface particle
-			area = ((6.0 - vgrid->adj[pi][pj][pk])/6.0) * (ss * ss * 6.0);
-            q_air = HEAT_CONDUCT * (AMBIENT_T - p->temp) * area;
-			//std::cout << "P->temp " << p->temp << std::endl;
-			air_change = q_air / (HEAT_CAP * m_Param [ SPH_PMASS ]);
-			p->temp += air_change;
-			//std::cout << "Air Change " << air_change << std::endl;
-		} 
+        if (p->state == SOLID) { // hack to prevent gravity on solids for now
+            force -= m_Vec[PLANE_GRAV_DIR];
+            force /= m_Param[SPH_PMASS];
+        } // take out after interfacial tension is implemeneted
 
-        p->temp_eval = p->temp;
-		if (p->temp > 0.5) {
-            if ( p->state == SOLID) {
-                if (pi + 1 < vgrid->theDim[0]) {
-                    vgrid->adj[pi+1][pj][pk]--;
-                }
+        for (int j=0; j < m_NC[i]; j++ ) { // loop through all neighbors
+            pcurr = (Fluid*) (mBuf[0].data + m_Neighbor[i][j]*mBuf[0].stride);
+            dx = ( p->pos.x - pcurr->pos.x)*d; // dist in cm
+            dy = ( p->pos.y - pcurr->pos.y)*d;
+            dz = ( p->pos.z - pcurr->pos.z)*d;
+            c = ( mR - m_NDist[i][j] ); //distance between current and neighbor?
+            pterm = -0.5f * c * m_SpikyKern * ( p->pressure + pcurr->pressure) / m_NDist[i][j];
+            dterm = c * p->density * pcurr->density;
+            vterm = m_LapKern * visc;
 
-                if (pi - 1 < vgrid->theDim[0]) {
-                    vgrid->adj[pi-1][pj][pk]--;
-                }
+            Vector3DF diff = p->pos; // distance between particle and its neighbor
+            diff -= pcurr->pos;
+            length = diff.Length();
+            lap_kern = m_LapKern * (m_Param[SPH_SMOOTHRADIUS] - length);
+            neighbor_temp += m_Param [ SPH_PMASS ] * ((pcurr->temp - p->temp)/pcurr->density) * lap_kern; // Newtonian Heat Transfer
 
-                if (pj + 1 < vgrid->theDim[1]) {
-                    vgrid->adj[pi][pj+1][pk]--;
-                }
-
-                if (pj - 1 < vgrid->theDim[1]) {
-                    vgrid->adj[pi][pj-1][pk]--;
-                }
-
-                if (pk + 1 < vgrid->theDim[2]) {
-                    vgrid->adj[pi][pj][pk+1]--;
-                }
-
-                if (pk - 1 < vgrid->theDim[2]) {
-                    vgrid->adj[pi][pj][pk-1]--;
-                }
-//                if (p->index.x + 1 < 
-                // update the neighbors adjacency values
-
-                p->state = LIQUID;
+            if (p->state == LIQUID) {
+                force.x += ( pterm * dx + vterm * (pcurr->vel_eval.x - p->vel_eval.x) ) * dterm;
+                force.y += ( pterm * dy + vterm * (pcurr->vel_eval.y - p->vel_eval.y) ) * dterm;
+                force.z += ( pterm * dz + vterm * (pcurr->vel_eval.z - p->vel_eval.z) ) * dterm;
+                // interfacial force equations
+                //force.x += (K_W + K_ICE)*(pcurr->pos.x - p->pos.x)/(dx*dx);
+                //force.y += (K_W + K_ICE)*(pcurr->pos.y - p->pos.y)/(dy*dy);
+                //force.z += (K_W + K_ICE)*(pcurr->pos.z - p->pos.z)/(dz*dz);
+            } else { //SOLID
             }
-		} 
+        }
+        p->sph_force = force;
+        neighbor_temp *= DIFF_T;
+
+        // air affected temperature
+        if (p->state == SOLID && vgrid->data[pi][pj][pk]) { // check surface particle?
+            sa = (6.0 - vgrid->adj[pi][pj][pk])/6.0;// * (edge * edge * 6.0);
+            Qi = THERMAL_CONDUCTIVITY_ICE * (AMBIENT_T - p->temp) * sa;
+        } else if (p->state == LIQUID) {
+            Qi = THERMAL_CONDUCTIVITY_WATER * (AMBIENT_T - p->temp);
+        }
+        dT = Qi / (HEAT_CAP * m_Param [ SPH_PMASS ]);
+        //p->temp += dT;
+        //p->temp += neighbor_temp;
+        //p->temp_eval = p->temp; //what?
+        p->temp_eval = neighbor_temp + dT; //what?
+		if (p->temp > 0.9 && p->state == SOLID) { // change state and update neighboring voxels
+            vgrid->data[pi][pj][pk] = 0; // set to no particle
+            vgrid->adj[pi][pj][pk] = -1;
+            if (pi + 1 < vgrid->theDim[0]) vgrid->adj[pi+1][pj][pk]--;
+            if (pi - 1 < vgrid->theDim[0]) vgrid->adj[pi-1][pj][pk]--;
+            if (pj + 1 < vgrid->theDim[1]) vgrid->adj[pi][pj+1][pk]--;
+            if (pj - 1 < vgrid->theDim[1]) vgrid->adj[pi][pj-1][pk]--;
+            if (pk + 1 < vgrid->theDim[2]) vgrid->adj[pi][pj][pk+1]--;
+            if (pk - 1 < vgrid->theDim[2]) vgrid->adj[pi][pj][pk-1]--;
+            p->state = LIQUID;
+		}
 	}
 }
