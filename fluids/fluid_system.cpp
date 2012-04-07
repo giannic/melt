@@ -144,12 +144,7 @@ void FluidSystem::Run ()
 
 	mint::Time start, stop;
 	
-	float ss = m_Param [ SPH_PDIST ] / m_Param[ SPH_SIMSCALE ];		// simulation scale (not Schutzstaffel)
-
-	if ( m_Vec[EMIT_RATE].x > 0 && (++m_Frame) % (int) m_Vec[EMIT_RATE].x == 0 ) {
-		//m_Frame = 0;
-		Emit ( ss ); 
-	}
+	//float ss = vgrid->voxelSize[0]*2;// m_Param [ SPH_PDIST ] / m_Param[ SPH_SIMSCALE ];		// simulation scale (not Schutzstaffel)
 	
 	#ifdef NOGRID
 		// Slow method - O(n^2)
@@ -227,7 +222,7 @@ void FluidSystem::Advance ()
 	radius = m_Param[SPH_PRADIUS];
 	min = m_Vec[SPH_VOLMIN];
 	max = m_Vec[SPH_VOLMAX];
-	ss = m_Param[SPH_SIMSCALE];
+	ss = 0.003;//m_Param[SPH_SIMSCALE];
 
 	dat1_end = mBuf[0].data + NumPoints()*mBuf[0].stride;
 	for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride ) {
@@ -514,24 +509,38 @@ void FluidSystem::AddVolume ( Vector3DF min, Vector3DF max, float spacing,VoxelG
 void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cube
 {
 	Vector3DF min, max;
-	
-	Reset ( nmax );
 
-    m_Vec [ SPH_VOLMIN ].Set ( VOLMIN_X, VOLMIN_Y, VOLMIN_Z );
-    m_Vec [ SPH_VOLMAX ].Set ( VOLMAX_X, VOLMAX_Y, VOLMAX_Z );
-    m_Vec [ SPH_INITMIN ].Set ( INITMIN_X, INITMIN_Y, INITMIN_Z );
-    m_Vec [ SPH_INITMAX ].Set ( INITMAX_X, INITMAX_Y, INITMAX_Z );
-	
+	// Testing loading dragon
+	m_Vec [ SPH_VOLMIN ].Set ( VOLMIN_X, VOLMIN_Y, VOLMIN_Z );
+	m_Vec [ SPH_VOLMAX ].Set ( VOLMAX_X, VOLMAX_Y, VOLMAX_Z );
+	m_Vec [ SPH_INITMIN ].Set ( INITMIN_X, INITMIN_Y, INITMIN_Z);
+	m_Vec [ SPH_INITMAX ].Set ( INITMAX_X, INITMAX_Y, INITMAX_Z );
+	//if (vgrid)
+		//delete vgrid;
+
 	switch ( n ) {
-    case 0:
-		// Basic cube
+	case 0:
+		// Load cube
+		vgrid = new VoxelGrid("voxel/cube.voxels");
+
 		break;
 	case 1:
-		//std::cout << " Testing Load " << std::endl;
-		// Testing loading dragon
-		vgrid = new VoxelGrid("voxel/dragon_120.voxels");
+		// Load dragon
+		vgrid = new VoxelGrid("voxel/dragon.voxels");
 	break;
+	case 2:
+		vgrid = new VoxelGrid("voxel/happy.voxels");
+	break;
+
 	}
+	nmax = vgrid->theDim[0] * vgrid->theDim[1] * vgrid->theDim[2];
+	if (nmax > 8400)
+		nmax = 8400;
+
+	ss = vgrid->voxelSize[0]*2;
+	//std::cout << "nmax" << nmax  << std::endl;
+
+	Reset ( nmax );
 
     // init our adjacency list
     short neighbors;
@@ -544,9 +553,9 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
                     if (i > 0 && vgrid->data[i-1][j][k]) neighbors++;
                     if (i < vgrid->theDim[0] - 1 && vgrid->data[i+1][j][k]) neighbors++;
                     if (j > 0 && vgrid->data[i][j-1][k]) neighbors++;
-                    if (j < vgrid->theDim[1] - 1 && vgrid->data[i][j+1][k]) neighbors++;
+                    if (j < vgrid->theDim[2] - 1 && vgrid->data[i][j+1][k]) neighbors++;
                     if (k > 0 && vgrid->data[i][j][k-1]) neighbors++;
-                    if (k < vgrid->theDim[2] - 1 && vgrid->data[i][j][k+1]) neighbors++;
+                    if (k < vgrid->theDim[1] - 1 && vgrid->data[i][j][k+1]) neighbors++;
                 } else {
                     neighbors = -1; //error state
                 }
@@ -557,8 +566,7 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
 
 	m_Param [ SPH_SIMSIZE ] = m_Param [ SPH_SIMSCALE ] * (m_Vec[SPH_VOLMAX].z - m_Vec[SPH_VOLMIN].z);
 	m_Param [ SPH_PDIST ] = pow ( m_Param[SPH_PMASS] / m_Param[SPH_RESTDENSITY], 1/3.0 );
-
-	float ss = m_Param [ SPH_PDIST ]*0.87 / m_Param[ SPH_SIMSCALE ];
+	//float ss = vgrid->voxelSize[0]*2 ;// m_Param [ SPH_PDIST ]*0.87 / m_Param[ SPH_SIMSCALE ];
 	//printf ( "Spacing: %f\n", ss);
 	AddVolume ( m_Vec[SPH_INITMIN], m_Vec[SPH_INITMAX], ss, vgrid );	// Create the particles
 
@@ -654,8 +662,7 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 	visc = m_Param[SPH_VISC];
 
 	dat1_end = mBuf[0].data + NumPoints()*mBuf[0].stride;
-
-	edge = m_Param [ SPH_PDIST ]*0.87 / m_Param[ SPH_SIMSCALE ];
+	edge = vgrid->voxelSize[0]*2; m_Param [ SPH_PDIST ]*0.87 / m_Param[ SPH_SIMSCALE ];
     i = 0;
 	for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride, i++ ) {
         // reset all instance variables
@@ -665,7 +672,6 @@ void FluidSystem::SPH_ComputeForceGridNC ()
         pi = p->index.x;
         pj = p->index.y;
         pk = p->index.z;
-
         if (p->state == SOLID) { // hack to prevent gravity on solids for now
             force -= m_Vec[PLANE_GRAV_DIR];
             force /= m_Param[SPH_PMASS];
@@ -718,10 +724,10 @@ void FluidSystem::SPH_ComputeForceGridNC ()
             vgrid->adj[pi][pj][pk] = -1;
             if (pi + 1 < vgrid->theDim[0]) vgrid->adj[pi+1][pj][pk]--;
             if (pi - 1 < vgrid->theDim[0]) vgrid->adj[pi-1][pj][pk]--;
-            if (pj + 1 < vgrid->theDim[1]) vgrid->adj[pi][pj+1][pk]--;
-            if (pj - 1 < vgrid->theDim[1]) vgrid->adj[pi][pj-1][pk]--;
-            if (pk + 1 < vgrid->theDim[2]) vgrid->adj[pi][pj][pk+1]--;
-            if (pk - 1 < vgrid->theDim[2]) vgrid->adj[pi][pj][pk-1]--;
+            if (pj + 1 < vgrid->theDim[2]) vgrid->adj[pi][pj+1][pk]--;
+            if (pj - 1 < vgrid->theDim[2]) vgrid->adj[pi][pj-1][pk]--;
+            if (pk + 1 < vgrid->theDim[1]) vgrid->adj[pi][pj][pk+1]--;
+            if (pk - 1 < vgrid->theDim[1]) vgrid->adj[pi][pj][pk-1]--;
             p->state = LIQUID;
 		}
 	}
