@@ -111,7 +111,7 @@ int FluidSystem::AddPoint ()
 	f->pressure = 0;
 	f->density = 0;
     f->temp = 0.0;
-    f->state = SOLID;
+    f->state = LIQUID;
     f->mass = 1; // mucho problem?
     f->adjacents = 6;
 	return ndx;
@@ -134,7 +134,7 @@ int FluidSystem::AddPointReuse ()
 	f->pressure = 0;
 	f->density = 0; 
 	f->temp = 0.0;
-    f->state = SOLID;
+    f->state = LIQUID;
     f->adjacents = 6;
 	f->mass = 1; // mucho problem?
 	return ndx;
@@ -146,12 +146,7 @@ void FluidSystem::Run ()
 
 	mint::Time start, stop;
 	
-	float ss = m_Param [ SPH_PDIST ] / m_Param[ SPH_SIMSCALE ];		// simulation scale (not Schutzstaffel)
-
-	if ( m_Vec[EMIT_RATE].x > 0 && (++m_Frame) % (int) m_Vec[EMIT_RATE].x == 0 ) {
-		//m_Frame = 0;
-		Emit ( ss ); 
-	}
+	//float ss = vgrid->voxelSize[0]*2;// m_Param [ SPH_PDIST ] / m_Param[ SPH_SIMSCALE ];		// simulation scale (not Schutzstaffel)
 	
 	#ifdef NOGRID
 		// Slow method - O(n^2)
@@ -229,7 +224,7 @@ void FluidSystem::Advance ()
 	radius = m_Param[SPH_PRADIUS];
 	min = m_Vec[SPH_VOLMIN];
 	max = m_Vec[SPH_VOLMAX];
-	ss = m_Param[SPH_SIMSCALE];
+	ss = 0.003;//m_Param[SPH_SIMSCALE];
 
 	dat1_end = mBuf[0].data + NumPoints()*mBuf[0].stride;
 	for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride ) {
@@ -499,34 +494,44 @@ void FluidSystem::AddVolume ( Vector3DF min, Vector3DF max, float spacing,VoxelG
 void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cube
 {
 	Vector3DF min, max;
-	
-	Reset ( nmax );
-	
+	// Testing loading dragon
+	m_Vec [ SPH_VOLMIN ].Set ( VOLMIN_X, VOLMIN_Y, VOLMIN_Z );
+	m_Vec [ SPH_VOLMAX ].Set ( VOLMAX_X, VOLMAX_Y, VOLMAX_Z );
+	m_Vec [ SPH_INITMIN ].Set ( INITMIN_X, INITMIN_Y, INITMIN_Z);
+	m_Vec [ SPH_INITMAX ].Set ( INITMAX_X, INITMAX_Y, INITMAX_Z );
+
 	switch ( n ) {
-	case 0:		// Wave pool
-		// Basic cube
-	    m_Vec [ SPH_VOLMIN ].Set ( volmin_x, volmin_y, volmin_z );
-		m_Vec [ SPH_VOLMAX ].Set ( volmax_x, volmax_y, volmax_z);
-		
-		m_Vec [ SPH_INITMIN ].Set ( initmin_x, initmin_y, initmin_z);
-		m_Vec [ SPH_INITMAX ].Set ( initmax_x, initmax_y, initmax_z);
+	case 0:
+		// Load cube
+		if (vgrid)
+			delete vgrid;
+		vgrid = new VoxelGrid("voxel/cube.voxels");
+
 		break;
 	case 1:
+		// Load dragon
 		std::cout << " Testing Load " << std::endl;
-		// Testing loading dragon
-		m_Vec [ SPH_VOLMIN ].Set ( VOLMIN_X, VOLMIN_Y, VOLMIN_Z );
-		m_Vec [ SPH_VOLMAX ].Set ( VOLMAX_X, VOLMAX_Y, VOLMAX_Z );
-		m_Vec [ SPH_INITMIN ].Set ( INITMIN_X, INITMIN_Y, INITMIN_Z);
-		m_Vec [ SPH_INITMAX ].Set ( INITMAX_X, INITMAX_Y, INITMAX_Z );
-		vgrid = new VoxelGrid("voxel/dragon_120.voxels");
-
+		if (vgrid)
+			delete vgrid;
+		vgrid = new VoxelGrid("voxel/dragon.voxels");
 	break;
+	case 2:
+		if (vgrid)
+			delete vgrid;
+
 	}
+	nmax = vgrid->theDim[0] * vgrid->theDim[1] * vgrid->theDim[2];
+	if (nmax > 8400)
+		nmax = 8400;
+
+	ss = vgrid->voxelSize[0]*2;
+	std::cout << "nmax" << nmax  << std::endl;
+
+	Reset ( nmax );
 
 	m_Param [ SPH_SIMSIZE ] = m_Param [ SPH_SIMSCALE ] * (m_Vec[SPH_VOLMAX].z - m_Vec[SPH_VOLMIN].z);
 	m_Param [ SPH_PDIST ] = pow ( m_Param[SPH_PMASS] / m_Param[SPH_RESTDENSITY], 1/3.0 );
-
-	float ss = m_Param [ SPH_PDIST ]*0.87 / m_Param[ SPH_SIMSCALE ];
+	//float ss = vgrid->voxelSize[0]*2 ;// m_Param [ SPH_PDIST ]*0.87 / m_Param[ SPH_SIMSCALE ];
 	//printf ( "Spacing: %f\n", ss);
 	AddVolume ( m_Vec[SPH_INITMIN], m_Vec[SPH_INITMAX], ss, vgrid );	// Create the particles
 
@@ -637,7 +642,7 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 
 	dat1_end = mBuf[0].data + NumPoints()*mBuf[0].stride;
 	i = 0;
-	float ss = m_Param [ SPH_PDIST ]*0.87 / m_Param[ SPH_SIMSCALE ];
+	float ss = vgrid->voxelSize[0]*2; m_Param [ SPH_PDIST ]*0.87 / m_Param[ SPH_SIMSCALE ];
 
 	float m_SpikyKern_temp = (45.0f / (3.141592 * pow(ss, 6)));  //m_Param[SPH_SMOOTHRADIUS]
 	for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride, i++ ) {

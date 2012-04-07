@@ -9,6 +9,16 @@
 #include <vector>
 #include "my_defs.h"
 
+VoxelGrid::~VoxelGrid() {
+	for(int i=0;i<theDim[0];i++){
+		for(int j=0;j<theDim[2];j++){
+			delete[] data[i][j];
+		}
+		delete[] data[i];
+	}
+	delete[] data;
+}
+
 void VoxelGrid::loadGrid(const char* filename) {  
 	FILE* voxel_file = fopen(filename, "rb");
 	if (voxel_file != NULL) {

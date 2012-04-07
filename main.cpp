@@ -63,7 +63,7 @@ float		light_fov, cam_fov;
 int		psys_rate = 0;							// Particle stuff
 int		psys_freq = 1;
 int		psys_demo = 1;
-int		psys_nmax = 8188;//4096;
+int		psys_nmax = 4096;
 
 bool	bHelp = false;						// Toggles
 int		iShade = 1;			

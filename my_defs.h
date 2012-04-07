@@ -22,7 +22,7 @@ static const float VOLMAX_Z = 40;
 
 static const float INITMIN_X = -30;
 static const float INITMIN_Y = -30;
-static const float INITMIN_Z = 0;
+static const float INITMIN_Z = 1;
 
 static const float INITMAX_X = 30;
 static const float INITMAX_Y = 30;

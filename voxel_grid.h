@@ -11,6 +11,7 @@ public:
 	VoxelGrid(const char* filename) {
 		loadGrid(filename);
 	}
+	~VoxelGrid();
 
 	// Function
 	void loadGrid(const char* filename);

@@ -102,6 +102,7 @@
 		void SPH_ComputeForceGridNC ();				// O(cn) - neighbor table
 		
 		VoxelGrid* vgrid;
+		float ss;
 	private:
 
 		// Smoothed Particle Hydrodynamics
