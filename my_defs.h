@@ -29,9 +29,9 @@ static const float INITMIN_X = 0;//-30;
 static const float INITMIN_Y = 0;//-30;
 static const float INITMIN_Z = 0;
 
-static const float INITMAX_X = 18;//30;
-static const float INITMAX_Y = 18;//30;
-static const float INITMAX_Z = 18; //60;
+static const float INITMAX_X = 60;//30;
+static const float INITMAX_Y = 60;//30;
+static const float INITMAX_Z = 60; //60;
 
 // Init fluid system with OBJ
 #define ADJUST_SCALE  1.6
