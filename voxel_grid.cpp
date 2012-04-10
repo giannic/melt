@@ -59,6 +59,33 @@ void VoxelGrid::loadGrid(const char* filename) {
 		printf("Scale Factor %f x %f x %f \n",scaleFactor[0],scaleFactor[1],scaleFactor[2]);
 		printf("Origin Offset %f x %f x %f \n",offset[0],offset[1],offset[2]);
 		
+		float size_x = theDim[0];
+		float size_y = theDim[2];
+		float size_z = theDim[1];
+
+		data = new bool**[size_x];
+		for (int i = 0; i < size_x; ++i) {
+			data[i] = new bool*[size_y];
+			for (int j = 0; j < size_y; ++j) {
+				data[i][j] = new bool[size_z];
+				for (int k = 0; k < size_z; ++k) {
+					data[i][j][k] = false;
+				}
+			}
+		}
+	
+		adj = new short**[theDim[0]];
+		for (int i = 0; i < size_x; ++i) {
+			adj[i] = new short*[size_y];
+			for (int j = 0; j < size_y; ++j) {
+				adj[i][j] = new short[size_z];
+				for (int k = 0; k < size_z; ++k) {
+					adj[i][j][k] = 0;
+				}
+			}
+		}
+
+		/* Original version
 		data = new bool**[theDim[0]];
 		for (int i = 0; i < theDim[0]; i++) {
 			data[i] = new bool*[theDim[2]];
@@ -79,7 +106,7 @@ void VoxelGrid::loadGrid(const char* filename) {
 					adj[i][j][k] = 0; // all sides have ice
 				}
 			}
-		}
+		}*/
 
 		char v;
 		voxelfile_voxel c_voxel;
@@ -94,6 +121,7 @@ void VoxelGrid::loadGrid(const char* filename) {
 				count++;
 			}
 		}
+		std::cout << " count in voxel grid " << count << std::endl;
 
 		fclose(voxel_file);
 	} else {
@@ -111,11 +139,16 @@ Vector3DF VoxelGrid::getCellCenter(int i, int j, int k)
 }
 
 Vector3DF VoxelGrid::inVoxelGrid(double x, double y, double z) {
-	int i = (x-offset[0])/voxelSize[0];
-	int j = (y-offset[1])/voxelSize[2]; // intentional switch of axis
-	int k = (z-offset[2])/voxelSize[1];
+	float size_x = theDim[0];
+	float size_y = theDim[2];
+	float size_z = theDim[1];
+
+	int i = x/size_x;(x-offset[0])/voxelSize[0];
+	int j = y/size_y;(y-offset[1])/voxelSize[2]; // intentional switch of axis
+	int k = z/size_z;(z-offset[2])/voxelSize[1];
 	
-	if (i < 0 || j < 0 || k < 0 || i > theDim[0]-1 || j > theDim[2]-1 || k > theDim[1]-1)
+	//if (i < 0 || j < 0 || k < 0 || i >= theDim[0]-1 || j >= theDim[2]-1 || k >= theDim[1]-1)
+	if (i <= 0 || j <= 0 || k <= 0 || i >= size_x|| j >= size_y|| k >= size_z)
 		return Vector3DF(-1.0, -1.0, -1.0);
 
 	//std::cout << "(" << i << "," << j << "," << k << ")" << std::endl;
