@@ -27,16 +27,16 @@ static const float VOLMAX_Z = 40;//40;
 // Hacking for now...Need to find Good mapping
 static const float INITMIN_X = 0;//-30;
 static const float INITMIN_Y = 0;//-30;
-static const float INITMIN_Z = 0;
+static const float INITMIN_Z = 1;
 
 static const float INITMAX_X = 30;
 static const float INITMAX_Y = 30;
 static const float INITMAX_Z = 60;
 
 // Init fluid system with OBJ
-#define ADJUST_SCALE  1
+#define ADJUST_SCALE  1.521587
 #define ADJUST_OFFSET_X 0//-30
 #define ADJUST_OFFSET_Y 0//-10
-#define ADJUST_OFFSET_Z 0//-30
+#define ADJUST_OFFSET_Z 1//-30
 
 #endif MYDEFS
