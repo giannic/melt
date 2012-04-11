@@ -222,7 +222,7 @@ void FluidSystem::Advance ()
 	radius = m_Param[SPH_PRADIUS];
 	min = m_Vec[SPH_VOLMIN];
 	max = m_Vec[SPH_VOLMAX];
-	ss = 0.003;//m_Param[SPH_SIMSCALE];
+	ss = m_Param[SPH_SIMSCALE];
 
 	dat1_end = mBuf[0].data + NumPoints()*mBuf[0].stride;
 	for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride ) {
@@ -342,7 +342,9 @@ void FluidSystem::Advance ()
 		p->pos += vnext;						// p(t+1) = p(t) + v(t+1/2) dt
 
 		p->temp += p->temp_eval *m_DT;
-		//p->temp *= m_DT/ss;
+
+
+
 
 		if ( m_Param[CLR_MODE]==1.0 ) {
 			adj = fabs(vnext.x)+fabs(vnext.y)+fabs(vnext.z) / 7000.0;
@@ -473,7 +475,7 @@ void FluidSystem::AddVolume ( Vector3DF min, Vector3DF max, float spacing,VoxelG
 
 	// temp counter
 	int count = 0;
-	for (float z = max.z; z >= min.z; z -= spacing ) {
+	for (float z = min.z; z <= max.z; z += spacing ) {
 		for (float y = min.y; y <= max.y; y += spacing ) {	
 			for (float x = min.x; x <= max.x; x += spacing ) {
                 Vector3DF index = vgrid->inVoxelGrid(x,y,z);
@@ -547,10 +549,8 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
 		return;
 	}
  	nmax = vgrid->theDim[0] * vgrid->theDim[1] * vgrid->theDim[2];
-	if (nmax > 8400)
-		nmax = 8400;
 
-	ss = vgrid->voxelSize[0];
+	//ss = vgrid->voxelSize[0];
 	//std::cout << "nmax" << nmax  << std::endl;
 
 	Reset ( nmax );
@@ -581,10 +581,10 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
 
 	m_Param [ SPH_SIMSIZE ] = m_Param [ SPH_SIMSCALE ] * (m_Vec[SPH_VOLMAX].z - m_Vec[SPH_VOLMIN].z);
 	m_Param [ SPH_PDIST ] = pow ( m_Param[SPH_PMASS] / m_Param[SPH_RESTDENSITY], 1/3.0 );
-	//float ss = vgrid->voxelSize[0]*2 ;// m_Param [ SPH_PDIST ]*0.87 / m_Param[ SPH_SIMSCALE ];
-	//printf ( "Spacing: %f\n", ss);
-
-	// Hacking for now...Need to find good mapping
+	float ss =  m_Param [ SPH_PDIST ]*0.87 / m_Param[ SPH_SIMSCALE ];
+	printf ( "Spacing: %f\n", ss);
+ 
+	// Hacking for now...Need to find good mapping   vgrid->voxelSize[0]
  	AddVolume ( m_Vec[SPH_INITMIN], m_Vec[SPH_INITMAX], vgrid->voxelSize[0], vgrid);//ss, vgrid );	// Create the particles
 
     Fluid* f;
@@ -679,7 +679,6 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 	visc = m_Param[SPH_VISC];
 
 	dat1_end = mBuf[0].data + NumPoints()*mBuf[0].stride;
-	edge = vgrid->voxelSize[0]*2; m_Param [ SPH_PDIST ]*0.87 / m_Param[ SPH_SIMSCALE ];
     i = 0;
 	int count = 1; 
 	for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride, i++ ) {
@@ -695,8 +694,8 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 		//std::cout << "normal loop " << std::endl;
 		//std::cout << "pi " << pi << " pj " << pj << " pk " << pk << std::endl;
         if (p->state == SOLID) { // hack to prevent gravity on solids for now
-            //force -= m_Vec[PLANE_GRAV_DIR];
-            //force /= m_Param[SPH_PMASS];
+            force -= m_Vec[PLANE_GRAV_DIR];
+            force /= m_Param[SPH_PMASS];
         } // take out after interfacial tension is implemeneted
 
         for (int j=0; j < m_NC[i]; j++ ) { // loop through all neighbors
@@ -720,9 +719,9 @@ void FluidSystem::SPH_ComputeForceGridNC ()
                 force.y += ( pterm * dy + vterm * (pcurr->vel_eval.y - p->vel_eval.y) ) * dterm;
                 force.z += ( pterm * dz + vterm * (pcurr->vel_eval.z - p->vel_eval.z) ) * dterm;
                 // interfacial force equations
-                //force.x += (K_W + K_ICE)*(pcurr->pos.x - p->pos.x)/(dx*dx);
-                //force.y += (K_W + K_ICE)*(pcurr->pos.y - p->pos.y)/(dy*dy);
-                //force.z += (K_W + K_ICE)*(pcurr->pos.z - p->pos.z)/(dz*dz);
+                //force.x += (K_WATER + K_ICE)*(pcurr->pos.x - p->pos.x)/(dx*dx);
+                //force.y += (K_WATER + K_ICE)*(pcurr->pos.y - p->pos.y)/(dy*dy);
+                //force.z += (K_WATER + K_ICE)*(pcurr->pos.z - p->pos.z)/(dz*dz);
             } else { //SOLID
             }
         }
@@ -730,17 +729,21 @@ void FluidSystem::SPH_ComputeForceGridNC ()
         neighbor_temp *= DIFF_T;
 
         // air affected temperature
-        if (p->state == SOLID && vgrid->data[pi][pj][pk]) { // check surface particle?
-            sa = (6.0 - vgrid->adj[pi][pj][pk])/6.0; // * (edge * edge * 6.0);
+        if (p->state == SOLID) { // check surface particle?
+            //sa = (6.0 - vgrid->adj[pi][pj][pk])/6.0; // * (edge * edge * 6.0);
+			//sa = (6.0 - vgrid->adj[pi][pj][pk])/(vgrid->voxelSize[0] * vgrid->voxelSize[0] * 6.0);// * (edge * edge * 6.0);
+            sa = (vgrid->voxelSize[0] * vgrid->voxelSize[0])*(6.0 - vgrid->adj[pi][pj][pk]);
             Qi = THERMAL_CONDUCTIVITY_ICE * (AMBIENT_T - p->temp) * sa;
+            dT = Qi / (HEAT_CAPACITY_ICE * 2.75);// m_Param [ SPH_PMASS ]) 
         } else if (p->state == LIQUID) {
-            Qi = THERMAL_CONDUCTIVITY_WATER * (AMBIENT_T - p->temp);
+            Qi = THERMAL_CONDUCTIVITY_WATER * (AMBIENT_T - p->temp); // should equalize to green
+            dT = Qi / (HEAT_CAPACITY_WATER * m_Param [ SPH_PMASS ]);
         }
-        dT = Qi / (HEAT_CAP * m_Param [ SPH_PMASS ]);
         //p->temp += dT;
         //p->temp += neighbor_temp;
         //p->temp_eval = p->temp; //what?
-        p->temp_eval = neighbor_temp + dT; //what?
+        p->temp_eval = dT; //what?
+        /*
 		if (p->temp > ICE_T && p->state == SOLID) { // change state and update neighboring voxels
             vgrid->data[pi][pj][pk] = 0; // set to no particle
 			//std::cout << "update neighbor " << std::endl;
@@ -753,8 +756,9 @@ void FluidSystem::SPH_ComputeForceGridNC ()
             if (pj - 1 > 0) vgrid->adj[pi][pj-1][pk]--;
             if (pk + 1 < vgrid->theDim[1]) vgrid->adj[pi][pj][pk+1]--;
             if (pk - 1 > 0) vgrid->adj[pi][pj][pk-1]--;
-            p->state = LIQUID;
+            //p->state = LIQUID;
 		}
+        */
 	}
 	//std::cout << "Counter : " << count << std::endl;
 }
