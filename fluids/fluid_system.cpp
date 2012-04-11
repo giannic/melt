@@ -360,60 +360,26 @@ void FluidSystem::Advance ()
 			// Color according to temperature
 			float v = p->temp;
             float dv = MAX_T - MIN_T;
-           float rgba[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+            float rgba[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 		    //float rgba[4] = {0.0f, 0.0f, 0.0f, 1.0f};
          
 			if (v < MIN_T) v = MIN_T;
             if (v > MAX_T) v = MAX_T;
 
-		   if (v > MIN_T && v < (MIN_T + 0.25 * dv)) {
-                rgba[0] = 0.0; //no red
-                rgba[1] = (v - MIN_T) / dv; // interpolate greens
-            } else if (v < (MIN_T + 0.5 * dv)) {
-                rgba[0] = 0.0; //no red
-                rgba[2] = (v - (MIN_T + 0.25*dv)) / dv; // interpolate blues
-            } else if (v < (MIN_T + 0.75 * dv)) {
-                rgba[2] = 1.0;0.0; //no blue
-                rgba[1] = (v - (MIN_T + 0.5*dv)) / dv; // interpolate greens
-            } else {
-                rgba[2] = 1.0;0.0; //no blue
-                rgba[1] = (v - (MIN_T + 0.75*dv)) / dv; // interpolate greens
-            }
-
-           /*  UNCOMMENT
-		   if (v < (MIN_T + 0.25 * dv)) {
-                rgba[0] = 0.0; //no red
-                rgba[1] = (v - MIN_T) / dv; // interpolate greens
-            } else if (v < (MIN_T + 0.5 * dv)) {
-                rgba[0] = 0.0; //no red
-                rgba[2] = (v - (MIN_T + 0.25*dv)) / dv; // interpolate blues
-            } else if (v < (MIN_T + 0.75 * dv)) {
-                rgba[2] = 0.0; //no blue
-                rgba[1] = (v - (MIN_T + 0.5*dv)) / dv; // interpolate greens
-            } else {
-                rgba[2] = 0.0; //no blue
-                rgba[1] = (v - (MIN_T + 0.75*dv)) / dv; // interpolate greens
-            }*/
-
-/*
             if (v < (MIN_T + 0.25 * dv)) {
                 rgba[0] = 0.0;
                 rgba[1] = 4 * (v - MIN_T) / dv;
-                //rgba[1] = (v - MIN_T) / dv;
             } else if (v < (MIN_T + 0.5 * dv)) {
                 rgba[0] = 0.0;
                 rgba[2] = 1.0 + 4.0 * (MIN_T + 0.25 * dv - v) / dv;
-                //rgba[2] = (MIN_T + 0.25 * dv - v) / dv;
             } else if (v < (MIN_T + 0.75 * dv)) {
                 rgba[0] = 4.0 * (v - MIN_T - 0.5 * dv) / dv;
-                //rgba[0] = (v - MIN_T - 0.5 * dv) / dv;
                 rgba[2] = 0.0;
             } else {
                 rgba[1] = 1.0 + 4.0 * (MIN_T + 0.75 * dv - v) / dv;
-                //rgba[1] = (MIN_T + 0.75 * dv - v) / dv;
                 rgba[2] = 0.0;
             }
-*/
+
             p->clr = COLORA(rgba[0], rgba[1], rgba[2], rgba[3]);
         }
 
@@ -728,7 +694,7 @@ void FluidSystem::SPH_ComputeForceGridNC ()
         pk = p->index.z;
 		
 		//std::cout << "normal loop " << std::endl;
-		std::cout << "pi " << pi << " pj " << pj << " pk " << pk << std::endl;
+		//std::cout << "pi " << pi << " pj " << pj << " pk " << pk << std::endl;
         if (p->state == SOLID) { // hack to prevent gravity on solids for now
             force -= m_Vec[PLANE_GRAV_DIR];
             force /= m_Param[SPH_PMASS];
@@ -776,23 +742,20 @@ void FluidSystem::SPH_ComputeForceGridNC ()
         //p->temp += neighbor_temp;
         //p->temp_eval = p->temp; //what?
         p->temp_eval = neighbor_temp + dT; //what?
-		if (p->temp > 0.9 && p->state == SOLID) { // change state and update neighboring voxels
+		if (p->temp > ICE_T && p->state == SOLID) { // change state and update neighboring voxels
             vgrid->data[pi][pj][pk] = 0; // set to no particle
 			//std::cout << "update neighbor " << std::endl;
 			//std::cout << "pi " << pi << " pj " << pj << " pk " << pk << std::endl;
 			vgrid->adj[pi][pj][pk] = -1;
 			//std::cout << "neighbor " << vgrid->adj[pi][pj][pk] << std::endl;
             if (pi + 1 < vgrid->theDim[0]) vgrid->adj[pi+1][pj][pk]--;
-            if (pi - 1 > 0 && 
-				pi - 1 < vgrid->theDim[0]) vgrid->adj[pi-1][pj][pk]--;
+            if (pi - 1 > 0) vgrid->adj[pi-1][pj][pk]--;
             if (pj + 1 < vgrid->theDim[2]) vgrid->adj[pi][pj+1][pk]--;
-            if (pj - 1 > 0 && 
-				pj - 1 < vgrid->theDim[2]) vgrid->adj[pi][pj-1][pk]--;
+            if (pj - 1 > 0) vgrid->adj[pi][pj-1][pk]--;
             if (pk + 1 < vgrid->theDim[1]) vgrid->adj[pi][pj][pk+1]--;
-            if (pk - 1 > 0 &&
-				pk - 1 < vgrid->theDim[1]) vgrid->adj[pi][pj][pk-1]--;
+            if (pk - 1 > 0) vgrid->adj[pi][pj][pk-1]--;
             p->state = LIQUID;
 		}
 	}
-	std::cout << "Counter : " << count << std::endl;
+	//std::cout << "Counter : " << count << std::endl;
 }
