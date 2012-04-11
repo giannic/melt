@@ -110,7 +110,7 @@ int FluidSystem::AddPoint ()
 	f->next = 0x0;
 	f->pressure = 0;
 	f->density = 0;
-    f->temp = ICE_T;
+    f->temp = MIN_T;
     f->state = LIQUID; //SOLID;
     f->mass = 0; // mucho problem?
 	return ndx;
@@ -132,7 +132,7 @@ int FluidSystem::AddPointReuse ()
 	f->next = 0x0;
 	f->pressure = 0;
 	f->density = 0; 
-	f->temp = ICE_T;
+	f->temp = MIN_T;
     f->state = SOLID;
 	f->mass = 1; // mucho problem?
 	return ndx;
@@ -695,8 +695,8 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 		//std::cout << "normal loop " << std::endl;
 		//std::cout << "pi " << pi << " pj " << pj << " pk " << pk << std::endl;
         if (p->state == SOLID) { // hack to prevent gravity on solids for now
-            force -= m_Vec[PLANE_GRAV_DIR];
-            force /= m_Param[SPH_PMASS];
+            //force -= m_Vec[PLANE_GRAV_DIR];
+            //force /= m_Param[SPH_PMASS];
         } // take out after interfacial tension is implemeneted
 
         for (int j=0; j < m_NC[i]; j++ ) { // loop through all neighbors
@@ -731,10 +731,10 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 
         // air affected temperature
         if (p->state == SOLID && vgrid->data[pi][pj][pk]) { // check surface particle?
-            sa = (6.0 - vgrid->adj[pi][pj][pk])/6.0;// * (edge * edge * 6.0);
-            Qi = 1; //THERMAL_CONDUCTIVITY_ICE * (AMBIENT_T - p->temp) * sa;
+            sa = (6.0 - vgrid->adj[pi][pj][pk])/6.0; // * (edge * edge * 6.0);
+            Qi = THERMAL_CONDUCTIVITY_ICE * (AMBIENT_T - p->temp) * sa;
         } else if (p->state == LIQUID) {
-            Qi = 1; // THERMAL_CONDUCTIVITY_WATER * (AMBIENT_T - p->temp);
+            Qi = THERMAL_CONDUCTIVITY_WATER * (AMBIENT_T - p->temp);
         }
         dT = Qi / (HEAT_CAP * m_Param [ SPH_PMASS ]);
         //p->temp += dT;

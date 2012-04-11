@@ -6,11 +6,11 @@ enum Status { SOLID, LIQUID};
 
 static const float AMBIENT_T = 296;
 static const float DIFF_T = 0.5;
-static const float MIN_T = 273;
+static const float MIN_T = 253;
 static const float MAX_T = 373;
 static const float ICE_T = 273;
-static const float K_W = 0.1;
-static const float K_ICE = 0.2;
+static const float K_W = 1000;
+static const float K_ICE = 2000;
 static const float THERMAL_CONDUCTIVITY_ICE = 2.18;// in watts per meter kelvin
 static const float THERMAL_CONDUCTIVITY_WATER = 0.58;// in watts per meter kelvin
 static const float HEAT_CAP = 15;
