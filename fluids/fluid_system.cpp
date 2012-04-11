@@ -477,8 +477,7 @@ void FluidSystem::AddVolume ( Vector3DF min, Vector3DF max, float spacing,VoxelG
 		for (float y = min.y; y <= max.y; y += spacing ) {	
 			for (float x = min.x; x <= max.x; x += spacing ) {
                 Vector3DF index = vgrid->inVoxelGrid(x,y,z);
-				if(index.x > 0 && index.y > 0 && index.z > 0){
-				   // std::cout << "count " <<count << std::endl;
+				if(index.x >= 0 && index.y >= 0 && index.z >= 0){
 					count++;
 					p = (Fluid*)GetPoint ( AddPointReuse () );
 					pos.Set ( x, y, z);
@@ -493,7 +492,7 @@ void FluidSystem::AddVolume ( Vector3DF min, Vector3DF max, float spacing,VoxelG
 			}
 		}
 	}
-	
+	std::cout << "count " <<count << std::endl;
 	/*for (float z = 4; z >= 0; z -= 1.00f ) {
 		for (float y = 0; y <= 4; y += 1.0f ) {	
 			for (float x = 0; x <= 4; x += 1.0f ) {
@@ -532,12 +531,12 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
 	switch ( n ) {
 	case 0:
 		// Load cube
-		vgrid = new VoxelGrid("voxel/cube.voxels");
+		vgrid = new VoxelGrid("voxel/cube_10.voxels");
 
 		break;
 	case 1:
 		// Load dragon
-		vgrid = new VoxelGrid("voxel/dragon.voxels");
+		vgrid = new VoxelGrid("voxel/dragon_30.voxels");
 	break;
 	case 2:
 		vgrid = new VoxelGrid("voxel/happy.voxels");
@@ -586,7 +585,7 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
 	//printf ( "Spacing: %f\n", ss);
 
 	// Hacking for now...Need to find good mapping
-	AddVolume ( m_Vec[SPH_INITMIN], m_Vec[SPH_INITMAX], 1.0f, vgrid);//ss, vgrid );	// Create the particles
+ 	AddVolume ( m_Vec[SPH_INITMIN], m_Vec[SPH_INITMAX], vgrid->voxelSize[0], vgrid);//ss, vgrid );	// Create the particles
 
     Fluid* f;
 	Vector3DF pos;
