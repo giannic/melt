@@ -143,9 +143,9 @@ Vector3DF VoxelGrid::inVoxelGrid(double x, double y, double z) {
 	float size_y = theDim[2];
 	float size_z = theDim[1];
 
-	int i = x;//size_x;(x-offset[0])/voxelSize[0];
-	int j = y;//size_y;(y-offset[1])/voxelSize[2]; // intentional switch of axis
-	int k = z;//size_z;(z-offset[2])/voxelSize[1];
+	int i = (x-offset[0])/voxelSize[0];
+	int j = (y-offset[1])/voxelSize[2]; // intentional switch of axis
+	int k = (z-offset[2])/voxelSize[1];
 	
 	//if (i < 0 || j < 0 || k < 0 || i >= theDim[0]-1 || j >= theDim[2]-1 || k >= theDim[1]-1)
 	if (i < 0 || j < 0 || k < 0 || i >= size_x|| j >= size_y|| k >= size_z)

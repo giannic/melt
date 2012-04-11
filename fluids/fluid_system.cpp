@@ -473,12 +473,12 @@ void FluidSystem::AddVolume ( Vector3DF min, Vector3DF max, float spacing,VoxelG
 
 	// temp counter
 	int count = 0;
-	/*for (float z = max.z; z >= min.z; z -= spacing ) {
+	for (float z = max.z; z >= min.z; z -= spacing ) {
 		for (float y = min.y; y <= max.y; y += spacing ) {	
 			for (float x = min.x; x <= max.x; x += spacing ) {
                 Vector3DF index = vgrid->inVoxelGrid(x,y,z);
 				if(index.x > 0 && index.y > 0 && index.z > 0){
-				    std::cout << "count " <<count << std::endl;
+				   // std::cout << "count " <<count << std::endl;
 					count++;
 					p = (Fluid*)GetPoint ( AddPointReuse () );
 					pos.Set ( x, y, z);
@@ -492,9 +492,9 @@ void FluidSystem::AddVolume ( Vector3DF min, Vector3DF max, float spacing,VoxelG
 				}
 			}
 		}
-	}*/
+	}
 	
-	for (float z = 4; z >= 0; z -= 1.00f ) {
+	/*for (float z = 4; z >= 0; z -= 1.00f ) {
 		for (float y = 0; y <= 4; y += 1.0f ) {	
 			for (float x = 0; x <= 4; x += 1.0f ) {
                 Vector3DF index = vgrid->inVoxelGrid(x,y,z);
@@ -514,7 +514,7 @@ void FluidSystem::AddVolume ( Vector3DF min, Vector3DF max, float spacing,VoxelG
 			}
 		}
 	}
-	
+	*/
 }
 
 void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cube
@@ -532,7 +532,7 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
 	switch ( n ) {
 	case 0:
 		// Load cube
-		vgrid = new VoxelGrid("voxel/cube_4.voxels");
+		vgrid = new VoxelGrid("voxel/cube.voxels");
 
 		break;
 	case 1:
@@ -547,12 +547,12 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
 	if(!vgrid) {
 		return;
 	}
- 	nmax = 64;// vgrid->theDim[0] * vgrid->theDim[1] * vgrid->theDim[2];
+ 	nmax = vgrid->theDim[0] * vgrid->theDim[1] * vgrid->theDim[2];
 	if (nmax > 8400)
 		nmax = 8400;
 
 	ss = vgrid->voxelSize[0];
-	std::cout << "nmax" << nmax  << std::endl;
+	//std::cout << "nmax" << nmax  << std::endl;
 
 	Reset ( nmax );
 
@@ -586,7 +586,7 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
 	//printf ( "Spacing: %f\n", ss);
 
 	// Hacking for now...Need to find good mapping
-	AddVolume ( m_Vec[SPH_INITMIN], m_Vec[SPH_INITMAX], vgrid->voxelSize[0], vgrid);//ss, vgrid );	// Create the particles
+	AddVolume ( m_Vec[SPH_INITMIN], m_Vec[SPH_INITMAX], 1.0f, vgrid);//ss, vgrid );	// Create the particles
 
     Fluid* f;
 	Vector3DF pos;

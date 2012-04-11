@@ -536,7 +536,7 @@ void init ()
 	glutSetCursor ( GLUT_CURSOR_NONE );
 
 	cam_angs.x = 29;		cam_angs.y = 75;		cam_angs.z = 80.0;
-	cam_to.x = 0;		cam_to.y = 0;		cam_to.z = 5;
+	cam_to.x = 0;		cam_to.y = 0;		cam_to.z = 10;
 	cam_fov = 35.0;
 
 	light[0].x = 39;		light[0].y = -60;	light[0].z = 43;
