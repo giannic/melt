@@ -87,7 +87,7 @@ void FluidSystem::Reset ( int nmax )
 	m_Toggle [ LEVY_BARRIER ] = false;
 	m_Toggle [ DRAIN_BARRIER ] = false;
 	m_Param [ SPH_INTSTIFF ] = 1.00;
-	m_Param [ SPH_VISC ] = 0.2;
+	m_Param [ SPH_VISC ] = VISC_WATER;
 	m_Param [ SPH_INTSTIFF ] = 0.50;
 	m_Param [ SPH_EXTSTIFF ] = 20000;
 	m_Param [ SPH_SMOOTHRADIUS ] = 0.01;
@@ -436,7 +436,7 @@ void FluidSystem::Advance ()
 void FluidSystem::SPH_Setup ()
 {
 	m_Param [ SPH_SIMSCALE ] =		0.004;			// unit size
-	m_Param [ SPH_VISC ] =			0.2;			// pascal-second (Pa.s) = 1 kg m^-1 s^-1  (see wikipedia page on viscosity)
+	m_Param [ SPH_VISC ] =			VISC_WATER;			// pascal-second (Pa.s) = 1 kg m^-1 s^-1  (see wikipedia page on viscosity)
 	m_Param [ SPH_RESTDENSITY ] =	600.0;			// kg / m^3
 	m_Param [ SPH_PMASS ] =			0.00020543;		// kg
 	m_Param [ SPH_PRADIUS ] =		0.002;//0.004			// m
@@ -698,7 +698,8 @@ void FluidSystem::SPH_ComputeForceGridNC ()
             force /= m_Param[SPH_PMASS];
         } // take out after interfacial tension is implemeneted
 
-        for (int j=0; j < m_NC[i]; j++ ) { // loop through all neighbors
+        for (int j=0; j < m_NC[i]; j++ ) { 
+			// Loop through all neighbors
             pcurr = (Fluid*) (mBuf[0].data + m_Neighbor[i][j]*mBuf[0].stride);
             dx = ( p->pos.x - pcurr->pos.x)*d; // dist in cm
             dy = ( p->pos.y - pcurr->pos.y)*d;
@@ -715,14 +716,27 @@ void FluidSystem::SPH_ComputeForceGridNC ()
             //neighbor_temp += m_Param [ SPH_PMASS ] * ((pcurr->temp - p->temp)/pcurr->density) * lap_kern; // Newtonian Heat Transfer
 
             if (p->state == LIQUID) {
-                force.x += ( pterm * dx + vterm * (pcurr->vel_eval.x - p->vel_eval.x) ) * dterm;
-                force.y += ( pterm * dy + vterm * (pcurr->vel_eval.y - p->vel_eval.y) ) * dterm;
-                force.z += ( pterm * dz + vterm * (pcurr->vel_eval.z - p->vel_eval.z) ) * dterm;
-                // interfacial force equations
-                //force.x += (K_WATER + K_ICE)*(pcurr->pos.x - p->pos.x)/(dx*dx);
-                //force.y += (K_WATER + K_ICE)*(pcurr->pos.y - p->pos.y)/(dy*dy);
-                //force.z += (K_WATER + K_ICE)*(pcurr->pos.z - p->pos.z)/(dz*dz);
-            } else { //SOLID
+					
+				Vector3DF dist = pcurr->pos;
+				dist -= p->pos;
+				float length  = dist.Length();
+				dist *= 1/(length * length);
+									// Water Particle
+					force.x += ( pterm * dx + vterm * (pcurr->vel_eval.x - p->vel_eval.x) ) * dterm;
+					force.y += ( pterm * dy + vterm * (pcurr->vel_eval.y - p->vel_eval.y) ) * dterm;
+					force.z += ( pterm * dz + vterm * (pcurr->vel_eval.z - p->vel_eval.z) ) * dterm;
+				if (pcurr->state == LIQUID) {
+					force.x += K_WATER * dist.x;
+					force.y += K_WATER * dist.y;
+					force.z += K_WATER * dist.z;
+
+				} else { //SOLID
+					force.x += K_ICE * dist.x;
+					force.y += K_ICE * dist.y;
+					force.z += K_ICE * dist.z;
+					//if (force.z < 0)
+					//std::cout << "force in z " << force.z << std::endl;
+				}
             }
         }
         p->sph_force = force;
@@ -734,16 +748,16 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 			//sa = (6.0 - vgrid->adj[pi][pj][pk])/(vgrid->voxelSize[0] * vgrid->voxelSize[0] * 6.0);// * (edge * edge * 6.0);
             sa = (vgrid->voxelSize[0] * vgrid->voxelSize[0])*(6.0 - vgrid->adj[pi][pj][pk]);
             Qi = THERMAL_CONDUCTIVITY_ICE * (AMBIENT_T - p->temp) * sa;
-            dT = Qi / (HEAT_CAPACITY_ICE * 2.75);// m_Param [ SPH_PMASS ]) 
+            dT = Qi / (HEAT_CAPACITY_ICE * MASS_H2O);//m_Param [ SPH_PMASS ]);
         } else if (p->state == LIQUID) {
             Qi = THERMAL_CONDUCTIVITY_WATER * (AMBIENT_T - p->temp); // should equalize to green
-            dT = Qi / (HEAT_CAPACITY_WATER * m_Param [ SPH_PMASS ]);
+            dT = Qi / (HEAT_CAPACITY_WATER * MASS_H2O);//m_Param [ SPH_PMASS ]);
         }
         //p->temp += dT;
         //p->temp += neighbor_temp;
         //p->temp_eval = p->temp; //what?
         p->temp_eval = dT; //what?
-        /*
+        
 		if (p->temp > ICE_T && p->state == SOLID) { // change state and update neighboring voxels
             vgrid->data[pi][pj][pk] = 0; // set to no particle
 			//std::cout << "update neighbor " << std::endl;
@@ -756,9 +770,9 @@ void FluidSystem::SPH_ComputeForceGridNC ()
             if (pj - 1 > 0) vgrid->adj[pi][pj-1][pk]--;
             if (pk + 1 < vgrid->theDim[1]) vgrid->adj[pi][pj][pk+1]--;
             if (pk - 1 > 0) vgrid->adj[pi][pj][pk-1]--;
-            //p->state = LIQUID;
+            p->state = LIQUID;
 		}
-        */
+        
 	}
 	//std::cout << "Counter : " << count << std::endl;
 }

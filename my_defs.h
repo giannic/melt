@@ -1,5 +1,6 @@
 #ifndef MYDEFS
 #define MYDEFS
+#include <math.h>
 
 // State of particle
 enum Status { SOLID, LIQUID};
@@ -9,8 +10,11 @@ static const float DIFF_T = 0.5;
 static const float MIN_T = 253;
 static const float MAX_T = 373;
 static const float ICE_T = 273;
-static const float K_WATER = 1000;
-static const float K_ICE = 2000;
+static const float K_WATER = 20;//71.97;
+static const float K_ICE = 8000;//75.64;
+static const float MASS_H2O =  2.99;// * pow(10.0, -23);
+static const float VISC_WATER = 0.2;
+
 static const float THERMAL_CONDUCTIVITY_ICE = 2.18;// in watts per meter kelvin
 static const float THERMAL_CONDUCTIVITY_WATER = 0.58;// in watts per meter kelvin
 static const float HEAT_CAPACITY_ICE = 2.11; // units: kJ/kg-K
