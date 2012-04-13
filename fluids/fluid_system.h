@@ -34,6 +34,7 @@
 	#include "point_set.h"
 	#include "fluid.h"
     #include "../my_defs.h"
+	#include "marchcubes.h"
 	
 	// Scalar params
 	#define SPH_SIMSIZE			4
@@ -72,7 +73,7 @@
 	#define MAX_PARAM			21
 	#define BFLUID				2
 
-	class FluidSystem : public PointSet {
+	class FluidSystem : public PointSet, public ImpSurface {
 	public:
 		FluidSystem ();
 
@@ -83,6 +84,8 @@
 		virtual void Advance ();
 		virtual int AddPoint ();		
 		virtual int AddPointReuse ();
+		virtual double eval(const Point3d& location);		// Marching cube function
+
 		Fluid* AddFluid ()			{ return (Fluid*) GetElem(0, AddPointReuse()); }
 		Fluid* GetFluid (int n)		{ return (Fluid*) GetElem(0, n); }
 		void AddVolume(Vector3DF min, Vector3DF max, float spacing, VoxelGrid* vgrid);
@@ -91,6 +94,7 @@
 		void SPH_Setup ();
 		void SPH_CreateExample ( int n, int nmax );
 		void SPH_DrawDomain ();
+		void SPH_DrawSurface ();
 		void SPH_ComputeKernels ();
 
 		void SPH_ComputePressureGrid ();			// O(kn) - spatial grid
@@ -98,10 +102,15 @@
 		
 		VoxelGrid* vgrid;
 		float ss;
+
+		//Marching Cubes
+		MarchCube* m_marchCube;
+		IsoSurface* m_surface;
 	private:
 
 		// Smoothed Particle Hydrodynamics
 		double						m_R2, m_Poly6Kern, m_LapKern, m_SpikyKern;		// Kernel functions
+
 	};
 
 #endif

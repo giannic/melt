@@ -66,6 +66,10 @@ void FluidSystem::Initialize ( int mode, int total )
 
 	SPH_Setup ();
 	Reset ( total );
+
+	//Initialize Marching Cubes
+	m_marchCube = new MarchCube();
+	m_surface = new IsoSurface(this);
 }
 
 void FluidSystem::Reset ( int nmax )
@@ -90,7 +94,7 @@ void FluidSystem::Reset ( int nmax )
 	m_Param [ SPH_VISC ] = VISC_WATER;
 	m_Param [ SPH_INTSTIFF ] = 0.50;
 	m_Param [ SPH_EXTSTIFF ] = 20000;
-	m_Param [ SPH_SMOOTHRADIUS ] = 0.01;
+	m_Param [ SPH_SMOOTHRADIUS ] = EFFECTIVE_RADIUS;
 	
 	m_Vec [ POINT_GRAV_POS ].Set ( 0, 0, 0 );
 	m_Vec [ PLANE_GRAV_DIR ].Set ( 0, 0, -9.8 );
@@ -201,6 +205,14 @@ void FluidSystem::SPH_DrawDomain ()
     glVertex3f ( max.x, min.y, min.z ); glVertex3f ( max.x, min.y, max.z );
     glVertex3f ( max.x, max.y, min.z ); glVertex3f ( max.x, max.y, max.z );
 	glEnd ();
+}
+
+void FluidSystem::SPH_DrawSurface() {
+	m_marchCube->setThreshold(0.005f);
+	m_marchCube->setSize((m_Vec[SPH_VOLMAX].x-m_Vec[SPH_VOLMIN].x)+10,(m_Vec[SPH_VOLMAX].y-m_Vec[SPH_VOLMIN].y)+10,(m_Vec[SPH_VOLMAX].z-m_Vec[SPH_VOLMIN].z)+10);
+	m_marchCube->setRes(100,100,100);
+	m_marchCube->setCenter(0.0,0.0,0.0);
+	m_marchCube->march(*m_surface);
 }
 
 void FluidSystem::Advance ()
@@ -439,7 +451,7 @@ void FluidSystem::SPH_Setup ()
 	m_Param [ SPH_VISC ] =			VISC_WATER;			// pascal-second (Pa.s) = 1 kg m^-1 s^-1  (see wikipedia page on viscosity)
 	m_Param [ SPH_RESTDENSITY ] =	600.0;			// kg / m^3
 	m_Param [ SPH_PMASS ] =			0.00020543;		// kg
-	m_Param [ SPH_PRADIUS ] =		0.002;//0.004			// m
+	m_Param [ SPH_PRADIUS ] =		0.002;          //0.004			// m
 	m_Param [ SPH_PDIST ] =			0.0059;			// m
 	m_Param [ SPH_SMOOTHRADIUS ] =	0.01;			// m 
 	m_Param [ SPH_INTSTIFF ] =		1.00;
@@ -586,7 +598,7 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
  
 	// Hacking for now...Need to find good mapping   vgrid->voxelSize[0]
  	AddVolume ( m_Vec[SPH_INITMIN], m_Vec[SPH_INITMAX], vgrid->voxelSize[0], vgrid);//ss, vgrid );	// Create the particles
-
+	std:: cout << "voxelsize " << vgrid->voxelSize[0] << std::endl;
     Fluid* f;
 	Vector3DF pos;
 
@@ -720,8 +732,8 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 				Vector3DF dist = pcurr->pos;
 				dist -= p->pos;
 				float length  = dist.Length();
-				dist *= 1/(length * length);
-									// Water Particle
+				dist /= (length * length);
+					// Water Particle
 					force.x += ( pterm * dx + vterm * (pcurr->vel_eval.x - p->vel_eval.x) ) * dterm;
 					force.y += ( pterm * dy + vterm * (pcurr->vel_eval.y - p->vel_eval.y) ) * dterm;
 					force.z += ( pterm * dz + vterm * (pcurr->vel_eval.z - p->vel_eval.z) ) * dterm;
@@ -747,10 +759,12 @@ void FluidSystem::SPH_ComputeForceGridNC ()
             //sa = (6.0 - vgrid->adj[pi][pj][pk])/6.0; // * (edge * edge * 6.0);
 			//sa = (6.0 - vgrid->adj[pi][pj][pk])/(vgrid->voxelSize[0] * vgrid->voxelSize[0] * 6.0);// * (edge * edge * 6.0);
             sa = (vgrid->voxelSize[0] * vgrid->voxelSize[0])*(6.0 - vgrid->adj[pi][pj][pk]);
-            Qi = THERMAL_CONDUCTIVITY_ICE * (AMBIENT_T - p->temp) * sa;
+            //Qi = THERMAL_CONDUCTIVITY_ICE * (AMBIENT_T - p->temp) * sa;
+			Qi = THERMAL_CONDUCTIVITY * (AMBIENT_T - p->temp) * sa;
             dT = Qi / (HEAT_CAPACITY_ICE * MASS_H2O);//m_Param [ SPH_PMASS ]);
         } else if (p->state == LIQUID) {
-            Qi = THERMAL_CONDUCTIVITY_WATER * (AMBIENT_T - p->temp); // should equalize to green
+            //Qi = THERMAL_CONDUCTIVITY_WATER * (AMBIENT_T - p->temp);
+			Qi = THERMAL_CONDUCTIVITY * (AMBIENT_T - p->temp);
             dT = Qi / (HEAT_CAPACITY_WATER * MASS_H2O);//m_Param [ SPH_PMASS ]);
         }
         //p->temp += dT;
@@ -775,4 +789,42 @@ void FluidSystem::SPH_ComputeForceGridNC ()
         
 	}
 	//std::cout << "Counter : " << count << std::endl;
+}
+
+double FluidSystem::eval(const Point3d& location) {
+	Fluid *pcurr;
+	int pndx;
+	Vector3DF position;
+	double c, d, dsq, r;
+	double dx, dy, dz, sum, xi;
+	double mR, mR2;
+	float radius = m_Param[SPH_SMOOTHRADIUS] / m_Param[SPH_SIMSCALE];
+
+	position = Vector3DF(location[0],location[1],location[2]);
+	d = m_Param[SPH_SIMSCALE];
+	mR = m_Param[SPH_SMOOTHRADIUS];
+	mR2 = (mR*mR);
+	sum = 0.0;
+
+	Grid_FindCells (position, radius );
+	for (int cell=0; cell < 8; cell++) {
+		if ( m_GridCell[cell] != -1 ) {
+			pndx = m_Grid [ m_GridCell[cell] ];				
+			while ( pndx != -1 ) {					
+				pcurr = (Fluid*) (mBuf[0].data + pndx*mBuf[0].stride);
+				dx = ( position.x - pcurr->pos.x)*d;		// dist in cm
+				dy = ( position.y - pcurr->pos.y)*d;
+				dz = ( position.z - pcurr->pos.z)*d;
+				dsq = (dx*dx + dy*dy + dz*dz);
+				if ( mR2 > dsq ) {
+					c =  m_R2 - dsq;
+					sum += (c * c * c) * pcurr->density;
+				}
+				pndx = pcurr->next;
+			}
+		}
+		m_GridCell[cell] = -1;
+	}
+	xi = sum * m_Param[SPH_PMASS] * m_Poly6Kern;
+	return xi;
 }
