@@ -291,17 +291,6 @@ void grabScreen()
     assert(error == IL_NO_ERROR);
 }
 
-void exportOBJ()  
-{
-	char obj_filename[2048];
-	sprintf_s(obj_filename, 2048, "OBJ/Melting%0d.obj", frame); 
-
-	std::ofstream out;
-	out.open(obj_filename);
-	out << *(psys.m_surface) << endl;
-	out.close();
-}
-
 void display () 
 {
 	mint::Time start, stop;	
@@ -309,8 +298,6 @@ void display ()
 	
 	if (is_recording) {
 		grabScreen();
-		psys.SPH_DrawSurface();
-		exportOBJ();
 	}
 	
 	// Do simulation!

@@ -214,14 +214,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\geometry.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\fluids\geometry.h"
-				>
-			</File>
-			<File
 				RelativePath=".\common\geomx.cpp"
 				>
 			</File>
@@ -246,23 +238,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\fluids\impsurface.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\fluids\impsurface.h"
-				>
-			</File>
-			<File
 				RelativePath=".\fluids\main.h"
-				>
-			</File>
-			<File
-				RelativePath=".\fluids\marchcubes.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\fluids\marchcubes.h"
 				>
 			</File>
 			<File
