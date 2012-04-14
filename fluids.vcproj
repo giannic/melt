@@ -334,12 +334,20 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="marching_cubes"
+			>
+			<File
+				RelativePath=".\marching_cubes\marching_cubes.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\marching_cubes\marching_cubes.h"
+				>
+			</File>
+		</Filter>
 		<File
 			RelativePath=".\main.cpp"
-			>
-		</File>
-		<File
-			RelativePath=".\marching_cubes.cpp"
 			>
 		</File>
 	</Files>

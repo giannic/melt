@@ -46,6 +46,8 @@
 #include <IL/ilu.h>
 #include <IL/ilut.h>
 
+#include "marching_cubes/marching_cubes.h"
+
 bool bTiming = false;
 bool bRec = false;
 //int mFrame = 0;
@@ -442,6 +444,8 @@ void keyboard_func ( unsigned char key, int x, int y )
 		if (psys_demo > 10 ) psys_demo = 0;
 		psys.SPH_CreateExample ( psys_demo, psys_nmax );
 		break;  
+    case 'i': // marching cubes (iso surface)
+
 	default:
 	break;
   }

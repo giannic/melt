@@ -13,18 +13,10 @@
 // This code is public domain.
 //
 
-#include <stdio.h>
-#include <math.h>
-//This program requires the OpenGL and GLUT libraries
-// You can obtain them for free from http://www.opengl.org
-#include "common/GL/glut.h"
+#include "marching_cubes.h"
 
-struct GLvector
-{
-        GLfloat fX;
-        GLfloat fY;
-        GLfloat fZ;     
-};
+GLfloat (*fSample)(GLfloat fX, GLfloat fY, GLfloat fZ) = fSample1;
+GLvoid (*vMarchCube)(GLfloat fX, GLfloat fY, GLfloat fZ, GLfloat fScale) = vMarchCube1;
 
 //These tables are used so that everything can be done in little loops that you can look at all at once
 // rather than in pages and pages of unrolled code.
@@ -94,33 +86,15 @@ GLboolean bSpin = true;
 GLboolean bMove = true;
 GLboolean bLight = true;
 
-
-void vIdle();
-void vDrawScene(); 
-void vResize(GLsizei, GLsizei);
-void vKeyboard(unsigned char cKey, int iX, int iY);
-void vSpecial(int iKey, int iX, int iY);
-
-GLvoid vPrintHelp();
-GLvoid vSetTime(GLfloat fTime);
-GLfloat fSample1(GLfloat fX, GLfloat fY, GLfloat fZ);
-GLfloat fSample2(GLfloat fX, GLfloat fY, GLfloat fZ);
-GLfloat fSample3(GLfloat fX, GLfloat fY, GLfloat fZ);
-GLfloat (*fSample)(GLfloat fX, GLfloat fY, GLfloat fZ) = fSample1;
-
-GLvoid vMarchingCubes();
-GLvoid vMarchCube1(GLfloat fX, GLfloat fY, GLfloat fZ, GLfloat fScale);
-GLvoid vMarchCube2(GLfloat fX, GLfloat fY, GLfloat fZ, GLfloat fScale);
-GLvoid (*vMarchCube)(GLfloat fX, GLfloat fY, GLfloat fZ, GLfloat fScale) = vMarchCube1;
-
-/*void main(int argc, char **argv) 
-{ 
+/*
+void main(int argc, char **argv) 
+{
         GLfloat afPropertiesAmbient [] = {0.50, 0.50, 0.50, 1.00}; 
         GLfloat afPropertiesDiffuse [] = {0.75, 0.75, 0.75, 1.00}; 
         GLfloat afPropertiesSpecular[] = {1.00, 1.00, 1.00, 1.00}; 
 
-        GLsizei iWidth = 640.0; 
-        GLsizei iHeight = 480.0; 
+        GLsizei iWidth = 640.0;
+        GLsizei iHeight = 480.0;
 
         glutInit(&argc, argv);
         glutInitWindowPosition( 0, 0);
@@ -669,8 +643,6 @@ GLvoid vMarchCube2(GLfloat fX, GLfloat fY, GLfloat fZ, GLfloat fScale)
                 vMarchTetrahedron(asTetrahedronPosition, afTetrahedronValue);
         }
 }
-        
-
 //vMarchingCubes iterates over the entire dataset, calling vMarchCube on each cube
 GLvoid vMarchingCubes()
 {
