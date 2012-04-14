@@ -62,7 +62,7 @@ float		light_fov, cam_fov;
 
 int		psys_rate = 0;							// Particle stuff
 int		psys_freq = 1;
-int		psys_demo = 0;
+int		psys_demo = 1;
 int		psys_nmax = 4096;
 
 bool	bHelp = false;						// Toggles
@@ -110,6 +110,30 @@ mmc::FpsTracker fps_tracker;
 bool is_recording = false;
 int frame;
 
+void drawAxes()
+{
+	glDisable(GL_LIGHTING);
+
+	glLineWidth(1.0);
+	glBegin(GL_LINES);
+	// First Axes: x-axis in red
+	glColor3f(1.0, 0.0, 0.0);
+	glVertex3f(0, 0.1, 0);
+	glVertex3f(5.0, 0.1, 0.0);
+
+	// Second Axes : y-axis in green
+	glColor3f(0.0, 1.0, 0.0);
+	glVertex3f(0.0, 0.1, 0.0);
+	glVertex3f(0.0, 5.1, 0.0);
+
+    // Third Axes : z-axis in blue
+	glColor3f(0.0, 0.0, 1.0);
+	glVertex3f(0.0, 0.1, 0.0);
+	glVertex3f(0.0, 0.1, 5.0);
+
+	glEnd();
+}
+
 void drawScene ( float* viewmat, bool bShade )
 {
     psys.SPH_DrawDomain();
@@ -149,6 +173,7 @@ void drawScene ( float* viewmat, bool bShade )
 		glDisable ( GL_LIGHTING );
 		psys.Draw ( &viewmat[0], 0.55 );			// Draw particles
 	}
+	drawAxes();
 }
 
 void draw2D ()

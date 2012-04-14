@@ -13,8 +13,10 @@ static const float ICE_T = 273;
 static const float K_WATER = 0.5;//71.97;
 static const float K_ICE = 2.0;//75.64;
 static const float MASS_H2O =  0.0008; //2.99;// * pow(10.0, -23);
-static const float VISC_WATER = 0.2;
+static const float VISC_WATER = 0.3;
 static const float EFFECTIVE_RADIUS = 0.0055; //0.01
+static const float INT_STIFF = 1.0;  // 0.5
+static const float EXT_STIFF = 5000;
 
 static const float THERMAL_CONDUCTIVITY_ICE = 2.18;// in watts per meter kelvin
 static const float THERMAL_CONDUCTIVITY_WATER = 0.58;// in watts per meter kelvin
@@ -23,21 +25,21 @@ static const float HEAT_CAPACITY_ICE = 2.11; // units: kJ/kg-K
 static const float HEAT_CAPACITY_WATER = 4.181; // units: kJ/kg-K
 
 // Init fluid system
-static const float VOLMIN_X = -10;
-static const float VOLMIN_Y = -10;
+static const float VOLMIN_X = -5;
+static const float VOLMIN_Y = -5;
 static const float VOLMIN_Z = 0;
 
-static const float VOLMAX_X = 10;//20;
-static const float VOLMAX_Y = 10;//20;
-static const float VOLMAX_Z = 20;//40;
+static const float VOLMAX_X = 33;//20;
+static const float VOLMAX_Y = 20;//20;
+static const float VOLMAX_Z = 30;//40;
 
 // Hacking for now...Need to find Good mapping
-static const float INITMIN_X = -10;//-30;
-static const float INITMIN_Y = -10;//-30;
+static const float INITMIN_X = 0;//-30;
+static const float INITMIN_Y = 0;//-30;
 static const float INITMIN_Z = 1;
 
-static const float INITMAX_X = 10;
-static const float INITMAX_Y = 10;
+static const float INITMAX_X = 30;
+static const float INITMAX_Y = 20;
 static const float INITMAX_Z = 20;
 
 // Init fluid system with OBJ
