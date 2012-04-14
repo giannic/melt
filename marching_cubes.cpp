@@ -13,11 +13,11 @@
 // This code is public domain.
 //
 
-#include "stdio.h"
-#include "math.h"
+#include <stdio.h>
+#include <math.h>
 //This program requires the OpenGL and GLUT libraries
 // You can obtain them for free from http://www.opengl.org
-#include "GL/glut.h"
+#include "common/GL/glut.h"
 
 struct GLvector
 {
@@ -113,7 +113,7 @@ GLvoid vMarchCube1(GLfloat fX, GLfloat fY, GLfloat fZ, GLfloat fScale);
 GLvoid vMarchCube2(GLfloat fX, GLfloat fY, GLfloat fZ, GLfloat fScale);
 GLvoid (*vMarchCube)(GLfloat fX, GLfloat fY, GLfloat fZ, GLfloat fScale) = vMarchCube1;
 
-void main(int argc, char **argv) 
+/*void main(int argc, char **argv) 
 { 
         GLfloat afPropertiesAmbient [] = {0.50, 0.50, 0.50, 1.00}; 
         GLfloat afPropertiesDiffuse [] = {0.75, 0.75, 0.75, 1.00}; 
@@ -159,7 +159,7 @@ void main(int argc, char **argv)
         vPrintHelp();
         glutMainLoop(); 
 }
-
+*/
 GLvoid vPrintHelp()
 {
         printf("Marching Cubes Example by Cory Bloyd (dejaspaminacan@my-deja.com)\n\n");
@@ -343,7 +343,7 @@ void vDrawScene()
         glPushMatrix(); 
         glTranslatef(-0.5, -0.5, -0.5);
         glBegin(GL_TRIANGLES);
-                vMarchingCubes();
+        vMarchingCubes();
         glEnd();
         glPopMatrix(); 
 

@@ -338,6 +338,10 @@
 			RelativePath=".\main.cpp"
 			>
 		</File>
+		<File
+			RelativePath=".\marching_cubes.cpp"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
