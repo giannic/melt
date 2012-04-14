@@ -729,7 +729,6 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 					force.x += K_WATER * dist.x;
 					force.y += K_WATER * dist.y;
 					force.z += K_WATER * dist.z;
-
 				} else { //SOLID
 					force.x += K_ICE * dist.x;
 					force.y += K_ICE * dist.y;
