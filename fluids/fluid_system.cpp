@@ -21,6 +21,9 @@
 */
 
 #include <conio.h>
+#include <iostream>
+#include <fstream>
+
 
 #ifdef _MSC_VER
 	#include <gl/glut.h>
@@ -86,10 +89,10 @@ void FluidSystem::Reset ( int nmax )
 	m_Toggle [ WALL_BARRIER ] = false;
 	m_Toggle [ LEVY_BARRIER ] = false;
 	m_Toggle [ DRAIN_BARRIER ] = false;
-	m_Param [ SPH_INTSTIFF ] = INT_STIFF;        //  1.00;
+	m_Param [ SPH_INTSTIFF ] = 1.00;
 	m_Param [ SPH_VISC ] = VISC_WATER;
-	m_Param [ SPH_INTSTIFF ] = INT_STIFF;
-	m_Param [ SPH_EXTSTIFF ] = EXT_STIFF; // 10000; //20000;
+	m_Param [ SPH_INTSTIFF ] = 0.50;
+	m_Param [ SPH_EXTSTIFF ] = 20000;
 	m_Param [ SPH_SMOOTHRADIUS ] = EFFECTIVE_RADIUS;
 	
 	m_Vec [ POINT_GRAV_POS ].Set ( 0, 0, 0 );
@@ -442,8 +445,8 @@ void FluidSystem::SPH_Setup ()
 	m_Param [ SPH_PRADIUS ] =		0.002;          //0.004			// m
 	m_Param [ SPH_PDIST ] =			0.0059;			// m
 	m_Param [ SPH_SMOOTHRADIUS ] =	0.01;			// m 
-	m_Param [ SPH_INTSTIFF ] =		INT_STIFF;              // 1.00;
-	m_Param [ SPH_EXTSTIFF ] =		 EXT_STIFF; //10000.0;
+	m_Param [ SPH_INTSTIFF ] =		1.00;
+	m_Param [ SPH_EXTSTIFF ] =		10000.0;
 	m_Param [ SPH_EXTDAMP ] =		256.0;
 	m_Param [ SPH_LIMIT ] =			200.0;			// m / s
 
@@ -533,7 +536,7 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
 	switch ( n ) {
 	case 0:
 		// Load cube
-		vgrid = new VoxelGrid("voxel/cube_15.voxels");
+		vgrid = new VoxelGrid("voxel/cube_10.voxels");
 
 		break;
 	case 1:
@@ -693,10 +696,9 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 		
 		//std::cout << "normal loop " << std::endl;
 		//std::cout << "pi " << pi << " pj " << pj << " pk " << pk << std::endl;
-        if (p->state == SOLID ) { // hack to prevent gravity on solids for now
+        if (p->state == SOLID) { // hack to prevent gravity on solids for now
             force -= m_Vec[PLANE_GRAV_DIR];
             force /= m_Param[SPH_PMASS];
-			//std::cout << "force to hold solid " << force.x << " " << force.y << " " << force.z << std::endl;
         } // take out after interfacial tension is implemeneted
 
         for (int j=0; j < m_NC[i]; j++ ) { 
@@ -777,4 +779,47 @@ void FluidSystem::SPH_ComputeForceGridNC ()
         
 	}
 	//std::cout << "Counter : " << count << std::endl;
+}
+
+void FluidSystem::SPH_BuildVoxels () {
+    rgrid = new RenderGrid();
+    char *dat1, *dat1_end;
+    Fluid *p;
+    float px_min, py_min, pz_min;
+    float px_max, py_max, pz_max;
+
+    int count = 0, discount = 0;
+    std::ofstream voxel_file("voxels.txt"); //open file
+    if (!voxel_file.is_open()) return;
+	dat1_end = mBuf[0].data + NumPoints()*mBuf[0].stride;
+    for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride) {
+        p = (Fluid*) dat1;
+        px_min = p->pos.x - RENDER_RADIUS;
+        px_max = p->pos.x + RENDER_RADIUS;
+        py_min = p->pos.y - RENDER_RADIUS;
+        py_max = p->pos.y + RENDER_RADIUS;
+        pz_min = p->pos.z - RENDER_RADIUS;
+        pz_max = p->pos.z + RENDER_RADIUS;
+
+        // currently circles will look like squares
+        for (int i = 0; i < rgrid->theDim[0]; i++) {
+            for (int j = 0; j < rgrid->theDim[1]; j++) {
+                for (int k = 0; k < rgrid->theDim[2]; k++) {
+                    if (i >= px_min && i <= px_max &&
+                        j >= py_min && j <= py_max &&
+                        k >= pz_min && k <= pz_max) {
+                            rgrid->data[i][j][k] = true;
+                            voxel_file << "1\n";
+                            count++;
+                    } else {
+                        voxel_file << "0\n";
+                        discount++;
+                    }
+                }
+            }
+        }
+    }
+    voxel_file.close(); // must close file
+    std::cout << "Count: " << count << std::endl;
+    std::cout << "Discount: " << discount << std::endl;
 }

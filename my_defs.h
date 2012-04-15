@@ -42,6 +42,10 @@ static const float INITMAX_X = 30;
 static const float INITMAX_Y = 20;
 static const float INITMAX_Z = 20;
 
+// rendering radius for voxel space
+static const float RENDER_GRID_DIV = 1;
+static const float RENDER_RADIUS = 1;
+
 // Init fluid system with OBJ
 #define ADJUST_SCALE 1.521587
 #define ADJUST_OFFSET_X 0//-30
