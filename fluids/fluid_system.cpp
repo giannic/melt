@@ -86,9 +86,9 @@ void FluidSystem::Reset ( int nmax )
 	m_Toggle [ WALL_BARRIER ] = false;
 	m_Toggle [ LEVY_BARRIER ] = false;
 	m_Toggle [ DRAIN_BARRIER ] = false;
-	m_Param [ SPH_INTSTIFF ] = INT_STIFF;        //  1.00;
+	m_Param [ SPH_INTSTIFF ] = INT_STIFF_WATER;        //  1.00;
 	m_Param [ SPH_VISC ] = VISC_WATER;
-	m_Param [ SPH_INTSTIFF ] = INT_STIFF;
+	m_Param [ SPH_INTSTIFF ] = INT_STIFF_WATER;
 	m_Param [ SPH_EXTSTIFF ] = EXT_STIFF; // 10000; //20000;
 	m_Param [ SPH_SMOOTHRADIUS ] = EFFECTIVE_RADIUS;
 	
@@ -343,7 +343,7 @@ void FluidSystem::Advance ()
 
 		p->temp += p->temp_eval *m_DT;
 
-
+		p->temp_eval = 0.0;
 
 
 		if ( m_Param[CLR_MODE]==1.0 ) {
@@ -442,7 +442,7 @@ void FluidSystem::SPH_Setup ()
 	m_Param [ SPH_PRADIUS ] =		0.002;          //0.004			// m
 	m_Param [ SPH_PDIST ] =			0.0059;			// m
 	m_Param [ SPH_SMOOTHRADIUS ] =	0.01;			// m 
-	m_Param [ SPH_INTSTIFF ] =		INT_STIFF;              // 1.00;
+	m_Param [ SPH_INTSTIFF ] =		INT_STIFF_WATER;              // 1.00;
 	m_Param [ SPH_EXTSTIFF ] =		 EXT_STIFF; //10000.0;
 	m_Param [ SPH_EXTDAMP ] =		256.0;
 	m_Param [ SPH_LIMIT ] =			200.0;			// m / s
@@ -533,12 +533,12 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
 	switch ( n ) {
 	case 0:
 		// Load cube
-		vgrid = new VoxelGrid("voxel/cube_15.voxels");
+		vgrid = new VoxelGrid("voxel/cube_20.voxels");
 
 		break;
 	case 1:
 		// Load dragon
-		vgrid = new VoxelGrid("voxel/dragon_30.voxels");
+		vgrid = new VoxelGrid("voxel/dragon_40.voxels");
 	break;
 	case 2:
 		vgrid = new VoxelGrid("voxel/happy.voxels");
@@ -650,8 +650,12 @@ void FluidSystem::SPH_ComputePressureGrid ()
 			}
 			m_GridCell[cell] = -1;
 		}
-		p->density = sum * m_Param[SPH_PMASS] * m_Poly6Kern ;	
-		p->pressure = ( p->density - m_Param[SPH_RESTDENSITY] ) * m_Param[SPH_INTSTIFF];		
+		p->density = sum * m_Param[SPH_PMASS] * m_Poly6Kern ;
+		// YUI MOD
+		if (p->state == LIQUID)
+			p->pressure = ( p->density - m_Param[SPH_RESTDENSITY] ) * m_Param[SPH_INTSTIFF];
+		else 
+			p->pressure = ( p->density - m_Param[SPH_RESTDENSITY] ) * INT_STIFF_ICE;
 		p->density = 1.0f / p->density;		
 	}
 }
@@ -690,12 +694,14 @@ void FluidSystem::SPH_ComputeForceGridNC ()
         pi = p->index.x;
         pj = p->index.y;
         pk = p->index.z;
-		
+
+		// Set the p->temp_eval == 0
+
 		//std::cout << "normal loop " << std::endl;
 		//std::cout << "pi " << pi << " pj " << pj << " pk " << pk << std::endl;
         if (p->state == SOLID ) { // hack to prevent gravity on solids for now
             force -= m_Vec[PLANE_GRAV_DIR];
-            force /= m_Param[SPH_PMASS];
+           force /= m_Param[SPH_PMASS];
 			//std::cout << "force to hold solid " << force.x << " " << force.y << " " << force.z << std::endl;
         } // take out after interfacial tension is implemeneted
 
@@ -713,9 +719,12 @@ void FluidSystem::SPH_ComputeForceGridNC ()
             Vector3DF diff = p->pos; // distance between particle and its neighbor
             diff -= pcurr->pos;
             length = diff.Length();
-            lap_kern = m_LapKern * (m_Param[SPH_SMOOTHRADIUS] - length);
-            //neighbor_temp += m_Param [ SPH_PMASS ] * ((pcurr->temp - p->temp)/pcurr->density) * lap_kern; // Newtonian Heat Transfer
 
+            //lap_kern = m_LapKern * (m_Param[SPH_SMOOTHRADIUS] - length);
+			lap_kern =  45.0f/(3.141592 * pow(P_PRADIUS, 6)) * (P_PRADIUS - length);
+            neighbor_temp += m_Param [ SPH_PMASS ] * ((pcurr->temp - p->temp)/pcurr->density) * lap_kern; // Newtonian Heat Transfer
+
+			// Calculate interfacial force 
             if (p->state == LIQUID) {
 					
 				Vector3DF dist = pcurr->pos;
@@ -740,9 +749,16 @@ void FluidSystem::SPH_ComputeForceGridNC ()
             }
         }
         p->sph_force = force;
-        neighbor_temp *= DIFF_T;
 
-        // air affected temperature
+		// Apply thermal diffusion based on the state of particle i
+		if (p->state == LIQUID)
+			neighbor_temp *= C_WATER;
+		else 
+			neighbor_temp *= C_ICE;
+
+		p->temp_eval += neighbor_temp;
+
+        // Ambient - particle heat propagation
         if (p->state == SOLID) { // check surface particle?
             //sa = (6.0 - vgrid->adj[pi][pj][pk])/6.0; // * (edge * edge * 6.0);
 			//sa = (6.0 - vgrid->adj[pi][pj][pk])/(vgrid->voxelSize[0] * vgrid->voxelSize[0] * 6.0);// * (edge * edge * 6.0);
@@ -758,14 +774,11 @@ void FluidSystem::SPH_ComputeForceGridNC ()
         //p->temp += dT;
         //p->temp += neighbor_temp;
         //p->temp_eval = p->temp; //what?
-        p->temp_eval = dT; //what?
+        p->temp_eval += dT; //what?
         
 		if (p->temp > ICE_T && p->state == SOLID) { // change state and update neighboring voxels
             vgrid->data[pi][pj][pk] = 0; // set to no particle
-			//std::cout << "update neighbor " << std::endl;
-			//std::cout << "pi " << pi << " pj " << pj << " pk " << pk << std::endl;
 			vgrid->adj[pi][pj][pk] = -1;
-			//std::cout << "neighbor " << vgrid->adj[pi][pj][pk] << std::endl;
             if (pi + 1 < vgrid->theDim[0]) vgrid->adj[pi+1][pj][pk]--;
             if (pi - 1 > 0) vgrid->adj[pi-1][pj][pk]--;
             if (pj + 1 < vgrid->theDim[2]) vgrid->adj[pi][pj+1][pk]--;
@@ -775,6 +788,7 @@ void FluidSystem::SPH_ComputeForceGridNC ()
             p->state = LIQUID;
 		}
         
+		//if (p->temp > AMBIENT_T)
+			//std::cout << "p->temp " << p->temp << std::endl;
 	}
-	//std::cout << "Counter : " << count << std::endl;
 }

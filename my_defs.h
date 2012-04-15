@@ -6,30 +6,33 @@
 enum Status { SOLID, LIQUID};
 
 static const float AMBIENT_T = 283;
-static const float DIFF_T = 0.5;
+static const float C_ICE = 0.5;
+static const float C_WATER = 0.1;
 static const float MIN_T = 253;
 static const float MAX_T = 373;
 static const float ICE_T = 273;
 static const float K_WATER = 0.5;//71.97;
 static const float K_ICE = 2.0;//75.64;
 static const float MASS_H2O =  0.0008; //2.99;// * pow(10.0, -23);
-static const float VISC_WATER = 0.3;
-static const float EFFECTIVE_RADIUS = 0.0055; //0.01
-static const float INT_STIFF = 1.0;  // 0.5
-static const float EXT_STIFF = 5000;
+static const float VISC_WATER = 0.4;
+static const float EFFECTIVE_RADIUS = 0.004;//1.1/2;  // 0.01
+static const float INT_STIFF_ICE = 3.0;  // 0.5
+static const float INT_STIFF_WATER = 0.9; 
+static const float EXT_STIFF = 20000;
+static const float P_PRADIUS = 1.1; // 1.1;
 
-static const float THERMAL_CONDUCTIVITY_ICE = 2.18;// in watts per meter kelvin
-static const float THERMAL_CONDUCTIVITY_WATER = 0.58;// in watts per meter kelvin
+static const float THERMAL_CONDUCTIVITY_ICE = 0.00267;//2.18;// in watts per meter kelvin
+static const float THERMAL_CONDUCTIVITY_WATER = 0.00267;//0.58;// in watts per meter kelvin
 static const float THERMAL_CONDUCTIVITY = 0.00267; //IUDN
 static const float HEAT_CAPACITY_ICE = 2.11; // units: kJ/kg-K
 static const float HEAT_CAPACITY_WATER = 4.181; // units: kJ/kg-K
 
 // Init fluid system
-static const float VOLMIN_X = -5;
-static const float VOLMIN_Y = -5;
+static const float VOLMIN_X = -2;
+static const float VOLMIN_Y = -2;
 static const float VOLMIN_Z = 0;
 
-static const float VOLMAX_X = 33;//20;
+static const float VOLMAX_X = 20;//20;
 static const float VOLMAX_Y = 20;//20;
 static const float VOLMAX_Z = 30;//40;
 
