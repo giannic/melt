@@ -802,9 +802,6 @@ void FluidSystem::SPH_BuildVoxels () {
     float px_min, py_min, pz_min;
     float px_max, py_max, pz_max;
 
-    int count = 0, discount = 0;
-    std::ofstream voxel_file("voxels.txt"); //open file
-    if (!voxel_file.is_open()) return;
 	dat1_end = mBuf[0].data + NumPoints()*mBuf[0].stride;
     for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride) {
         p = (Fluid*) dat1;
@@ -823,17 +820,32 @@ void FluidSystem::SPH_BuildVoxels () {
                         j >= py_min && j <= py_max &&
                         k >= pz_min && k <= pz_max) {
                             rgrid->data[i][j][k] = true;
-                            voxel_file << "1\n";
-                            count++;
-                    } else {
-                        voxel_file << "0\n";
-                        discount++;
                     }
                 }
             }
         }
     }
+
+    // write final values to file
+    int count = 0, discount = 0;
+    std::ofstream voxel_file("voxels.txt"); //open file
+    if (!voxel_file.is_open()) return;
+    for (int i = 0; i < rgrid->theDim[0]; i++) {
+        for (int j = 0; j < rgrid->theDim[1]; j++) {
+            for (int k = 0; k < rgrid->theDim[2]; k++) {
+                if (rgrid->data[i][j][k]) {
+                    voxel_file << "1\n";
+                    count++;
+                } else {
+                    voxel_file << "0\n";
+                    discount++;
+                }
+            }
+        }
+    }
     voxel_file.close(); // must close file
+
     std::cout << "Count: " << count << std::endl;
     std::cout << "Discount: " << discount << std::endl;
+
 }
