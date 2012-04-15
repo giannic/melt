@@ -31,6 +31,7 @@
 	#include <math.h>
 
 	#include "../voxel_grid.h"
+	#include "../RenderGrid.h"
 	#include "point_set.h"
 	#include "fluid.h"
     #include "../my_defs.h"
@@ -97,7 +98,11 @@
 		void SPH_ComputePressureGrid ();			// O(kn) - spatial grid
 		void SPH_ComputeForceGridNC ();				// O(cn) - neighbor table
 		
+        void SPH_BuildVoxels ();                    // build voxel grid for rendering
+                                                    // currently 
+
 		VoxelGrid* vgrid;
+        RenderGrid* rgrid; // render grid
 		float ss;
 
 	private:

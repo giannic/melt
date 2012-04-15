@@ -30,9 +30,6 @@
 #include "common_defs.h"
 #include "include\fps.h"
 
-#ifdef BUILD_CUDA
-	#include "fluid_system_host.cuh"	
-#endif
 #include "fluid_system.h"
 #include "gl_helper.h"
 
@@ -445,7 +442,8 @@ void keyboard_func ( unsigned char key, int x, int y )
 		psys.SPH_CreateExample ( psys_demo, psys_nmax );
 		break;  
     case 'i': // marching cubes (iso surface)
-
+        std::cout << "building voxels" << std::endl;
+        psys.SPH_BuildVoxels();
 	default:
 	break;
   }
@@ -593,11 +591,6 @@ void init ()
 
 int main ( int argc, char **argv )
 {
-	#ifdef BUILD_CUDA
-		// Initialize CUDA
-		cudaInit( argc, argv );
-	#endif
-
 	// set up the window
 	glutInit( &argc, &argv[0] ); 
 	glutInitDisplayMode( GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH );

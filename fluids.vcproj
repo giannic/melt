@@ -286,6 +286,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\RenderGrid.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\RenderGrid.h"
+				>
+			</File>
+			<File
 				RelativePath=".\common\vector-inline.h"
 				>
 			</File>
