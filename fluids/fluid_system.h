@@ -99,13 +99,12 @@
 		void SPH_ComputeForceGridNC ();				// O(cn) - neighbor table
 		
         //void SPH_BuildVoxels ();                    // build voxel grid for rendering
-                                                    // currently 
 
 		VoxelGrid* vgrid;
 		float ss;
 
 		// Marching cube
-		virtual Double	eval	(const Point3d& location);
+		virtual Double eval	(const Point3d& location);
 		void SPH_DrawSurface ();
 
 		MarchCube* m_marchCube;

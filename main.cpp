@@ -318,9 +318,9 @@ void exportOBJ() {
 	sprintf_s(obj_filename, 2048, "OBJ/Melting%0d.obj", frame); 
 
 	std::ofstream out;
-	out.open(obj_filename);
-	out << *(psys.m_surface) << endl;
-	out.close();
+    out.open(obj_filename);
+    out << *(psys.m_surface) << endl;
+    out.close();
 }
 
 void display () 

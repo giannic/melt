@@ -181,7 +181,7 @@ ostream& operator << (ostream& out, const IsoSurface& s)
 	int numFaces = (int) s.faces.size();
 	for (int i = 0; i < numFaces; ++i)
 	{
-		out << s.faces[i] << endl;
+		out << "f " << s.faces[i] << endl;
 	}
 
 	return out;

@@ -5,7 +5,7 @@
 // State of particle
 enum Status { SOLID, LIQUID};
 
-static const float AMBIENT_T = 283;//283;
+static const float AMBIENT_T = 373; //283;
 static const float C_ICE = 0.5;
 static const float C_WATER = 0.1;
 static const float MIN_T = 253;

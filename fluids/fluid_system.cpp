@@ -69,6 +69,10 @@ void FluidSystem::Initialize ( int mode, int total )
 
 	SPH_Setup ();
 	Reset ( total );
+
+    //init marching cube
+    m_marchCube = new MarchCube();
+    m_surface = new IsoSurface(this);
 }
 
 void FluidSystem::Reset ( int nmax )
@@ -461,6 +465,7 @@ void FluidSystem::SPH_ComputeKernels ()
 	m_Param [ SPH_PDIST ] = pow ( m_Param[SPH_PMASS] / m_Param[SPH_RESTDENSITY], 1/3.0 );
 	m_R2 = m_Param [SPH_SMOOTHRADIUS] * m_Param[SPH_SMOOTHRADIUS];
 	m_Poly6Kern = 315.0f / (64.0f * 3.141592 * pow( m_Param[SPH_SMOOTHRADIUS], 9) );	// Wpoly6 kernel (denominator part) - 2003 Muller, p.4
+    std::cout << "POLYKERN: " << m_Poly6Kern << std::endl;
 	m_SpikyKern = -45.0f / (3.141592 * pow( m_Param[SPH_SMOOTHRADIUS], 6) );			// Laplacian of viscocity (denominator): PI h^6
 	m_LapKern = 45.0f / (3.141592 * pow( m_Param[SPH_SMOOTHRADIUS], 6) );
 	//std::cout << "M_spikyKern" <<m_SpikyKern << std::endl;
@@ -868,10 +873,9 @@ void FluidSystem::SPH_DrawSurface()
 	m_marchCube->setRes(100,100,100);
 	m_marchCube->setCenter(0.0,0.0,0.0);
 	m_marchCube->march(*m_surface);
-
 }
 
-Double	FluidSystem::eval(const Point3d& location)
+Double FluidSystem::eval(const Point3d& location)
 {
 	Fluid *pcurr;
 	int pndx;
@@ -879,26 +883,27 @@ Double	FluidSystem::eval(const Point3d& location)
 	double c, d, dsq, r;
 	double dx, dy, dz, sum, xi;
 	double mR, mR2;
-	float radius = m_Param[SPH_SMOOTHRADIUS] / m_Param[SPH_SIMSCALE];
+	float radius = 5; //m_Param[SPH_SMOOTHRADIUS] / m_Param[SPH_SIMSCALE];
 
 	position = Vector3DF(location[0],location[1],location[2]);
 	d = m_Param[SPH_SIMSCALE];
-	mR = m_Param[SPH_SMOOTHRADIUS];
+	mR = 0.01; m_Param[SPH_SMOOTHRADIUS];
 	mR2 = (mR*mR);
 	sum = 0.0;
 
-	Grid_FindCells (position, radius );
+	Grid_FindCells (position, radius);
 	for (int cell=0; cell < 8; cell++) {
 		if ( m_GridCell[cell] != -1 ) {
-			pndx = m_Grid [ m_GridCell[cell] ];				
-			while ( pndx != -1 ) {					
+			pndx = m_Grid [ m_GridCell[cell] ];
+			while ( pndx != -1 ) {
 				pcurr = (Fluid*) (mBuf[0].data + pndx*mBuf[0].stride);
 				dx = ( position.x - pcurr->pos.x)*d;		// dist in cm
 				dy = ( position.y - pcurr->pos.y)*d;
 				dz = ( position.z - pcurr->pos.z)*d;
 				dsq = (dx*dx + dy*dy + dz*dz);
-				if ( mR2 > dsq ) {
-					c =  m_R2 - dsq;
+
+				if ( mR2 > dsq ) { // if particle radius squared is greater than distance squared
+					c =  mR2 - dsq;
 					sum += (c * c * c) * pcurr->density;
 				}
 				pndx = pcurr->next;
@@ -906,6 +911,7 @@ Double	FluidSystem::eval(const Point3d& location)
 		}
 		m_GridCell[cell] = -1;
 	}
-	xi = sum * m_Param[SPH_PMASS] * m_Poly6Kern;
+    xi = sum * m_Param[SPH_PMASS] * m_Poly6Kern;
+    //std::cout << xi << std::endl;
 	return xi;
 }
