@@ -860,3 +860,52 @@ void FluidSystem::SPH_BuildVoxels () {
     std::cout << "Discount: " << discount << std::endl;
 }
 */
+
+void FluidSystem::SPH_DrawSurface()
+{
+	m_marchCube->setThreshold(0.5);
+	m_marchCube->setSize((m_Vec[SPH_VOLMAX].x-m_Vec[SPH_VOLMIN].x)+10,(m_Vec[SPH_VOLMAX].y-m_Vec[SPH_VOLMIN].y)+10,(m_Vec[SPH_VOLMAX].z-m_Vec[SPH_VOLMIN].z)+10);
+	m_marchCube->setRes(100,100,100);
+	m_marchCube->setCenter(0.0,0.0,0.0);
+	m_marchCube->march(*m_surface);
+
+}
+
+Double	FluidSystem::eval(const Point3d& location)
+{
+	Fluid *pcurr;
+	int pndx;
+	Vector3DF position;
+	double c, d, dsq, r;
+	double dx, dy, dz, sum, xi;
+	double mR, mR2;
+	float radius = m_Param[SPH_SMOOTHRADIUS] / m_Param[SPH_SIMSCALE];
+
+	position = Vector3DF(location[0],location[1],location[2]);
+	d = m_Param[SPH_SIMSCALE];
+	mR = m_Param[SPH_SMOOTHRADIUS];
+	mR2 = (mR*mR);
+	sum = 0.0;
+
+	Grid_FindCells (position, radius );
+	for (int cell=0; cell < 8; cell++) {
+		if ( m_GridCell[cell] != -1 ) {
+			pndx = m_Grid [ m_GridCell[cell] ];				
+			while ( pndx != -1 ) {					
+				pcurr = (Fluid*) (mBuf[0].data + pndx*mBuf[0].stride);
+				dx = ( position.x - pcurr->pos.x)*d;		// dist in cm
+				dy = ( position.y - pcurr->pos.y)*d;
+				dz = ( position.z - pcurr->pos.z)*d;
+				dsq = (dx*dx + dy*dy + dz*dz);
+				if ( mR2 > dsq ) {
+					c =  m_R2 - dsq;
+					sum += (c * c * c) * pcurr->density;
+				}
+				pndx = pcurr->next;
+			}
+		}
+		m_GridCell[cell] = -1;
+	}
+	xi = sum * m_Param[SPH_PMASS] * m_Poly6Kern;
+	return xi;
+}

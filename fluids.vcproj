@@ -205,6 +205,34 @@
 				RelativePath=".\fluids\fluid_system.h"
 				>
 			</File>
+			<File
+				RelativePath=".\geometry.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\geometry.h"
+				>
+			</File>
+			<File
+				RelativePath=".\fluids\impsurface.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\fluids\impsurface.h"
+				>
+			</File>
+			<File
+				RelativePath=".\main.h"
+				>
+			</File>
+			<File
+				RelativePath=".\fluids\marchcubes.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\fluids\marchcubes.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="common"
