@@ -286,14 +286,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\RenderGrid.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\RenderGrid.h"
-				>
-			</File>
-			<File
 				RelativePath=".\common\vector-inline.h"
 				>
 			</File>
@@ -339,18 +331,6 @@
 			</File>
 			<File
 				RelativePath=".\include\timer.h"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="marching_cubes"
-			>
-			<File
-				RelativePath=".\marching_cubes\marching_cubes.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\marching_cubes\marching_cubes.h"
 				>
 			</File>
 		</Filter>

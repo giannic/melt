@@ -43,8 +43,6 @@
 #include <IL/ilu.h>
 #include <IL/ilut.h>
 
-#include "marching_cubes/marching_cubes.h"
-
 bool bTiming = false;
 bool bRec = false;
 //int mFrame = 0;
@@ -443,7 +441,7 @@ void keyboard_func ( unsigned char key, int x, int y )
 		break;  
     case 'i': // marching cubes (iso surface)
         std::cout << "building voxels" << std::endl;
-        psys.SPH_BuildVoxels();
+        //psys.SPH_BuildVoxels();
 	default:
 	break;
   }

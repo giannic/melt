@@ -795,6 +795,7 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 	}
 }
 
+/*
 void FluidSystem::SPH_BuildVoxels () {
     rgrid = new RenderGrid();
     char *dat1, *dat1_end;
@@ -812,6 +813,14 @@ void FluidSystem::SPH_BuildVoxels () {
         pz_min = p->pos.z - RENDER_RADIUS;
         pz_max = p->pos.z + RENDER_RADIUS;
 
+
+        std::cout << "PXMIN: " << px_min << std::endl;
+        std::cout << "PYMIN: " << py_min << std::endl;
+        std::cout << "PZMIN: " << pz_min << std::endl;
+        std::cout << "PXMAX: " << px_max << std::endl;
+        std::cout << "PYMAX: " << py_max << std::endl;
+        std::cout << "PZMAX: " << pz_max << std::endl;
+
         // currently circles will look like squares
         for (int i = 0; i < rgrid->theDim[0]; i++) {
             for (int j = 0; j < rgrid->theDim[1]; j++) {
@@ -828,24 +837,24 @@ void FluidSystem::SPH_BuildVoxels () {
 
     // write final values to file
     int count = 0, discount = 0;
-    std::ofstream voxel_file("voxels.txt"); //open file
-    if (!voxel_file.is_open()) return;
+    //std::ofstream voxel_file("voxels.txt"); //open file
+    //if (!voxel_file.is_open()) return;
     for (int i = 0; i < rgrid->theDim[0]; i++) {
         for (int j = 0; j < rgrid->theDim[1]; j++) {
             for (int k = 0; k < rgrid->theDim[2]; k++) {
                 if (rgrid->data[i][j][k]) {
-                    voxel_file << "1\n";
+                    //voxel_file << "1\n";
                     count++;
                 } else {
-                    voxel_file << "0\n";
+                    //voxel_file << "0\n";
                     discount++;
                 }
             }
         }
     }
-    voxel_file.close(); // must close file
+    //voxel_file.close(); // must close file
 
     std::cout << "Count: " << count << std::endl;
     std::cout << "Discount: " << discount << std::endl;
-
 }
+*/
