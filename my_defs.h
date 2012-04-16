@@ -5,20 +5,20 @@
 // State of particle
 enum Status { SOLID, LIQUID};
 
-static const float AMBIENT_T = 283;
+static const float AMBIENT_T = 283;//283;
 static const float C_ICE = 0.5;
 static const float C_WATER = 0.1;
 static const float MIN_T = 253;
 static const float MAX_T = 373;
 static const float ICE_T = 273;
-static const float K_WATER = 0.5;//71.97;
-static const float K_ICE = 2.0;//75.64;
+static const float K_WATER = 0.01 ;//71.97;
+static const float K_ICE = 0.5; //* 10000;//75.64;
 static const float MASS_H2O =  0.0008; //2.99;// * pow(10.0, -23);
-static const float VISC_WATER = 1.0;
-static const float EFFECTIVE_RADIUS = 0.004;//1.1/2;  // 0.01
-static const float INT_STIFF_ICE = 3.0;  // 0.5
-static const float INT_STIFF_WATER = 0.9; 
-static const float EXT_STIFF = 10000;
+static const float VISC_WATER =0.3;
+static const float EFFECTIVE_RADIUS = 0.0053;//1.1/2;  // 0.01
+static const float INT_STIFF_ICE = 0.3;  // 0.5
+static const float INT_STIFF_WATER = 0.5; 
+static const float EXT_STIFF = 15000;
 static const float P_PRADIUS = 1.1; // 1.1;
 
 static const float THERMAL_CONDUCTIVITY_ICE = 0.00267;//2.18;// in watts per meter kelvin

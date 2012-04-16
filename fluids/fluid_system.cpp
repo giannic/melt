@@ -733,10 +733,12 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 				dist -= p->pos;
 				float length  = dist.Length();
 				dist /= (length * length);
-					// Water Particle
-					force.x += ( pterm * dx + vterm * (pcurr->vel_eval.x - p->vel_eval.x) ) * dterm;
-					force.y += ( pterm * dy + vterm * (pcurr->vel_eval.y - p->vel_eval.y) ) * dterm;
-					force.z += ( pterm * dz + vterm * (pcurr->vel_eval.z - p->vel_eval.z) ) * dterm;
+
+				// Water Particle
+				force.x += ( pterm * dx + vterm * (pcurr->vel_eval.x - p->vel_eval.x) ) * dterm;
+				force.y += ( pterm * dy + vterm * (pcurr->vel_eval.y - p->vel_eval.y) ) * dterm;
+				force.z += ( pterm * dz + vterm * (pcurr->vel_eval.z - p->vel_eval.z) ) * dterm;
+
 				if (pcurr->state == LIQUID) {
 					force.x += K_WATER * dist.x;
 					force.y += K_WATER * dist.y;
