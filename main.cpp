@@ -59,7 +59,7 @@ float		light_fov, cam_fov;
 
 int		psys_rate = 0;							// Particle stuff
 int		psys_freq = 1;
-int		psys_demo = 0;
+int		psys_demo = 2;
 int		psys_nmax = 4096;
 
 bool	bHelp = false;						// Toggles
@@ -330,8 +330,8 @@ void display ()
 	
 	if (is_recording) {
 		grabScreen();
-		psys.SPH_DrawSurface();
-		exportOBJ();
+	//	psys.SPH_DrawSurface();
+		//exportOBJ();
 	}
 	
 	// Do simulation!

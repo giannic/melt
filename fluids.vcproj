@@ -206,11 +206,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\geometry.cpp"
+				RelativePath=".\fluids\geometry.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\geometry.h"
+				RelativePath=".\fluids\geometry.h"
 				>
 			</File>
 			<File

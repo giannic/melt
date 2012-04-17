@@ -544,7 +544,7 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
 		vgrid = new VoxelGrid("voxel/dragon_40.voxels");
 	break;
 	case 2:
-		vgrid = new VoxelGrid("voxel/happy.voxels");
+		vgrid = new VoxelGrid("voxel/happy_30.voxels");
 	break;
 
 	}
