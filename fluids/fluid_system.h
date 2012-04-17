@@ -29,12 +29,14 @@
 	#include <stdio.h>
 	#include <stdlib.h>
 	#include <math.h>
+#include <limits>
 
 	#include "../voxel_grid.h"
 	#include "point_set.h"
 	#include "fluid.h"
     #include "../my_defs.h"
 	#include "marchcubes.h"
+
 	
 	// Scalar params
 	#define SPH_SIMSIZE			4
@@ -99,13 +101,12 @@
 		void SPH_ComputeForceGridNC ();				// O(cn) - neighbor table
 		
         //void SPH_BuildVoxels ();                    // build voxel grid for rendering
-                                                    // currently 
 
 		VoxelGrid* vgrid;
 		float ss;
 
 		// Marching cube
-		virtual Double	eval	(const Point3d& location);
+		virtual Double eval	(const Point3d& location);
 		void SPH_DrawSurface ();
 
 		MarchCube* m_marchCube;

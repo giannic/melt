@@ -165,8 +165,8 @@ ostream& operator << (ostream& out, const IsoSurface& s)
 	int numVertices = (int)s.vertices.size();
 	
 	for (int i = 0; i < numVertices; ++i)
-	{
-		out << "v " << s.vertices[i][0] << " " << s.vertices[i][1] << " " << s.vertices[i][2] << endl;
+    {
+        out << "v " << s.vertices[i][0] << " " << s.vertices[i][1] << " " << s.vertices[i][2] << endl;
 	}
 
 	//out << "#Vertex Normals" << endl;
@@ -181,7 +181,7 @@ ostream& operator << (ostream& out, const IsoSurface& s)
 	int numFaces = (int) s.faces.size();
 	for (int i = 0; i < numFaces; ++i)
 	{
-		out << s.faces[i] << endl;
+		out << "f " << s.faces[i] << endl;
 	}
 
 	return out;
