@@ -160,7 +160,7 @@ public:
 	void			setPos		(Double x, Double y, Double z);
 
 	void			setVal		(Double value_)
-							{ value = value_; }
+    { value = value_; if (value != value) std::cout << "bad setVal" << std::endl;}
 	bool			isInside	(Double threshold) 
 							{ return (value <= threshold); }
 private:

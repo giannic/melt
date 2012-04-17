@@ -617,9 +617,9 @@ void FluidSystem::SPH_ComputePressureGrid ()
 	Fluid* pcurr;
 	int pndx;
 	int i, cnt = 0;
-	float dx, dy, dz, sum, dsq, c;
-	float d, d2, mR, mR2;
-	float radius = m_Param[SPH_SMOOTHRADIUS] / m_Param[SPH_SIMSCALE];
+	double dx, dy, dz, sum, dsq, c;
+	double d, d2, mR, mR2;
+	double radius = m_Param[SPH_SMOOTHRADIUS] / m_Param[SPH_SIMSCALE];
 	d = m_Param[SPH_SIMSCALE];
 	d2 = d*d;
 	mR = m_Param[SPH_SMOOTHRADIUS];
@@ -658,13 +658,16 @@ void FluidSystem::SPH_ComputePressureGrid ()
 			}
 			m_GridCell[cell] = -1;
 		}
-		p->density = sum * m_Param[SPH_PMASS] * m_Poly6Kern ;
+		p->density = sum * m_Param[SPH_PMASS] * m_Poly6Kern;
 		// YUI MOD
 		if (p->state == LIQUID)
 			p->pressure = ( p->density - m_Param[SPH_RESTDENSITY] ) * m_Param[SPH_INTSTIFF];
 		else 
 			p->pressure = ( p->density - m_Param[SPH_RESTDENSITY] ) * INT_STIFF_ICE;
-		p->density = 1.0f / p->density;		
+        if (p->density != 0) {
+            p->density = 1.0f / p->density;
+        //p->density = 1.0;
+        }
 	}
 }
 
@@ -705,8 +708,6 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 
 		// Set the p->temp_eval == 0
 
-		//std::cout << "normal loop " << std::endl;
-		//std::cout << "pi " << pi << " pj " << pj << " pk " << pk << std::endl;
         if (p->state == SOLID) { // hack to prevent gravity on solids for now
             force -= m_Vec[PLANE_GRAV_DIR];
             force /= m_Param[SPH_PMASS];
@@ -752,8 +753,6 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 					force.x += K_ICE * dist.x;
 					force.y += K_ICE * dist.y;
 					force.z += K_ICE * dist.z;
-					//if (force.z < 0)
-					//std::cout << "force in z " << force.z << std::endl;
 				}
             }
         }
@@ -796,75 +795,8 @@ void FluidSystem::SPH_ComputeForceGridNC ()
             if (pk - 1 > 0) vgrid->adj[pi][pj][pk-1]--;
             p->state = LIQUID;
 		}
-        
-		//if (p->temp > AMBIENT_T)
-			//std::cout << "p->temp " << p->temp << std::endl;
 	}
 }
-
-/*
-void FluidSystem::SPH_BuildVoxels () {
-    rgrid = new RenderGrid();
-    char *dat1, *dat1_end;
-    Fluid *p;
-    float px_min, py_min, pz_min;
-    float px_max, py_max, pz_max;
-
-	dat1_end = mBuf[0].data + NumPoints()*mBuf[0].stride;
-    for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride) {
-        p = (Fluid*) dat1;
-        px_min = p->pos.x - RENDER_RADIUS;
-        px_max = p->pos.x + RENDER_RADIUS;
-        py_min = p->pos.y - RENDER_RADIUS;
-        py_max = p->pos.y + RENDER_RADIUS;
-        pz_min = p->pos.z - RENDER_RADIUS;
-        pz_max = p->pos.z + RENDER_RADIUS;
-
-
-        std::cout << "PXMIN: " << px_min << std::endl;
-        std::cout << "PYMIN: " << py_min << std::endl;
-        std::cout << "PZMIN: " << pz_min << std::endl;
-        std::cout << "PXMAX: " << px_max << std::endl;
-        std::cout << "PYMAX: " << py_max << std::endl;
-        std::cout << "PZMAX: " << pz_max << std::endl;
-
-        // currently circles will look like squares
-        for (int i = 0; i < rgrid->theDim[0]; i++) {
-            for (int j = 0; j < rgrid->theDim[1]; j++) {
-                for (int k = 0; k < rgrid->theDim[2]; k++) {
-                    if (i >= px_min && i <= px_max &&
-                        j >= py_min && j <= py_max &&
-                        k >= pz_min && k <= pz_max) {
-                            rgrid->data[i][j][k] = true;
-                    }
-                }
-            }
-        }
-    }
-
-    // write final values to file
-    int count = 0, discount = 0;
-    //std::ofstream voxel_file("voxels.txt"); //open file
-    //if (!voxel_file.is_open()) return;
-    for (int i = 0; i < rgrid->theDim[0]; i++) {
-        for (int j = 0; j < rgrid->theDim[1]; j++) {
-            for (int k = 0; k < rgrid->theDim[2]; k++) {
-                if (rgrid->data[i][j][k]) {
-                    //voxel_file << "1\n";
-                    count++;
-                } else {
-                    //voxel_file << "0\n";
-                    discount++;
-                }
-            }
-        }
-    }
-    //voxel_file.close(); // must close file
-
-    std::cout << "Count: " << count << std::endl;
-    std::cout << "Discount: " << discount << std::endl;
-}
-*/
 
 void FluidSystem::SPH_DrawSurface()
 {
@@ -883,11 +815,11 @@ Double FluidSystem::eval(const Point3d& location)
 	double c, d, dsq, r;
 	double dx, dy, dz, sum, xi;
 	double mR, mR2;
-	float radius = 5; //m_Param[SPH_SMOOTHRADIUS] / m_Param[SPH_SIMSCALE];
+	float radius = m_Param[SPH_SMOOTHRADIUS] / m_Param[SPH_SIMSCALE];
 
 	position = Vector3DF(location[0],location[1],location[2]);
 	d = m_Param[SPH_SIMSCALE];
-	mR = 0.01; m_Param[SPH_SMOOTHRADIUS];
+	mR = m_Param[SPH_SMOOTHRADIUS];
 	mR2 = (mR*mR);
 	sum = 0.0;
 
@@ -912,6 +844,5 @@ Double FluidSystem::eval(const Point3d& location)
 		m_GridCell[cell] = -1;
 	}
     xi = sum * m_Param[SPH_PMASS] * m_Poly6Kern;
-    //std::cout << xi << std::endl;
 	return xi;
 }
