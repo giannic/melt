@@ -208,17 +208,20 @@ void draw2D ()
 		}		
 
 		sprintf ( disp,	"KEYBOARD" );						drawText ( 20, 60,  disp );
-		sprintf ( disp,	"[ ]    Next/Prev Demo" );			drawText ( 20, 70,  disp );
-		sprintf ( disp,	"N M    Adjust Max Particles" );	drawText ( 20, 80,  disp );
+		//sprintf ( disp,	"[ ]    Next/Prev Demo" );			drawText ( 20, 70,  disp );
+		//sprintf ( disp,	"N M    Adjust Max Particles" );	drawText ( 20, 80,  disp );
 		sprintf ( disp,	"space  Pause" );					drawText ( 20, 90,  disp );
-		sprintf ( disp,	"S      Shading mode" );			drawText ( 20, 100,  disp );	
-		sprintf ( disp,	"G      Toggle CUDA vs CPU" );		drawText ( 20, 110,  disp );	
-		sprintf ( disp,	"< >    Change emitter rate" );		drawText ( 20, 120,  disp );	
-		sprintf ( disp,	"C      Move camera /w mouse" );	drawText ( 20, 130,  disp );	
-		sprintf ( disp,	"I      Move emitter /w mouse" );	drawText ( 20, 140,  disp );	
-		sprintf ( disp,	"O      Change emitter angle" );	drawText ( 20, 150,  disp );	
-		sprintf ( disp,	"L      Move light /w mouse" );				drawText ( 20, 160,  disp );			
-		sprintf ( disp,	"X      Draw velocity/pressure/color" );	drawText ( 20, 170,  disp );
+		sprintf ( disp,	"S      Shading mode" );			drawText ( 20, 100,  disp );
+		sprintf ( disp,	"ALT + LMB      Camera rotate" );			drawText ( 20, 110,  disp );
+		sprintf ( disp,	"ALT + RMB      Camera zoom" );			drawText ( 20, 120,  disp );
+		sprintf ( disp,	"ALT + MMB      Camera pan" );			drawText ( 20, 130,  disp );
+		//sprintf ( disp,	"G      Toggle CUDA vs CPU" );		drawText ( 20, 110,  disp );	
+		//sprintf ( disp,	"< >    Change emitter rate" );		drawText ( 20, 120,  disp );	
+		//sprintf ( disp,	"C      Move camera /w mouse" );	drawText ( 20, 130,  disp );	
+		//sprintf ( disp,	"I      Move emitter /w mouse" );	drawText ( 20, 140,  disp );	
+		//sprintf ( disp,	"O      Change emitter angle" );	drawText ( 20, 150,  disp );	
+		//sprintf ( disp,	"L      Move light /w mouse" );				drawText ( 20, 160,  disp );			
+		sprintf ( disp,	"X      Draw velocity/pressure/color" );	drawText ( 20, 140,  disp );
 
 		Vector3DF vol = psys.GetVec(SPH_VOLMAX);
 		vol -= psys.GetVec(SPH_VOLMIN);
@@ -591,7 +594,7 @@ int main ( int argc, char **argv )
 	glutInitWindowSize( (int) window_width, (int) window_height );
 	glutCreateWindow ( "Fluids v.1 (c) 2008, R. Hoetzlein (ZLib) extended by Gianni and Yui" );
 
-	//glutFullScreen ();
+	glutFullScreen ();
  
 	// initialize parameters
 	init();

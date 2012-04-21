@@ -409,33 +409,28 @@ int MarchCube::getVertex (int cubeX, int cubeY, int edgeNum)
 
 CubeVtx::CubeVtx ()
 {
-value = 100;
 }
 
 CubeVtx::CubeVtx (Point3d& pos_)
 : pos(pos_)
 {
-value = 100;
 }
 
 CubeVtx::CubeVtx (Double x, Double y, Double z)
 : pos(Point3d(x, y, z))
 {
-value = 100;
 }
 
 CubeVtx::CubeVtx (Point3d& pos_, Double value_)
 : pos(Point3d(pos_)),
   value(value_)
 {
-value = 100;
 }
 
 CubeVtx::CubeVtx (Double x, Double y, Double z, Double value_)
 : pos(Point3d(x, y, z)),
   value(value_)
 {
-value = 100;
 }
 
 CubeVtx::~CubeVtx ()
