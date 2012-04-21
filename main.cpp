@@ -59,7 +59,7 @@ float		light_fov, cam_fov;
 
 int		psys_rate = 0;							// Particle stuff
 int		psys_freq = 1;
-int		psys_demo = 2;
+int		psys_demo = 0;
 int		psys_nmax = 4096;
 
 bool	bHelp = false;						// Toggles
@@ -77,6 +77,7 @@ float proj_matrix[16];					// Projective matrix
 #define DRAG_OFF		0				// mouse states
 #define DRAG_LEFT		1
 #define DRAG_RIGHT		2
+#define DRAG_MIDDLE		3
 int		last_x = -1, last_y = -1;		// mouse vars
 int		mode = 0;
 int		dragging = 0;
@@ -88,11 +89,9 @@ GLuint	depth_id;
 
 // Different things we can move around
 #define MODE_CAM		0
-#define MODE_CAM_TO		1
 #define MODE_OBJ		2
 #define MODE_OBJPOS		3
 #define MODE_OBJGRP		4
-#define MODE_LIGHTPOS	5
 
 #define MODE_DOF		6
 
@@ -330,8 +329,8 @@ void display ()
 	
 	if (is_recording) {
 		grabScreen();
-	//	psys.SPH_DrawSurface();
-		//exportOBJ();
+		psys.SPH_DrawSurface();
+		exportOBJ();
 	}
 	
 	// Do simulation!
@@ -409,15 +408,12 @@ void keyboard_func ( unsigned char key, int x, int y )
 		} break;
 	case 'g': case 'G':	psys.Toggle ( USE_CUDA );	break;
 	case 'f': case 'F':	mode = MODE_DOF;	break;
-
-	case 'z': case 'Z':	mode = MODE_CAM_TO;	break;
 	case 'c': case 'C':	mode = MODE_CAM;	break; 
 	case 'h': case 'H':	bHelp = !bHelp; break;
 	case 'x': case 'X':
 		if ( ++iClrMode > 2) iClrMode = 0;
 		psys.SetParam ( CLR_MODE, iClrMode );
 		break;
-	case 'l': case 'L':	mode = MODE_LIGHTPOS;	break;
 	case 'd': case 'D': {
 		int d = psys.GetParam ( PNT_DRAWMODE ) + 1;
 		if ( d > 2 ) d = 0;
@@ -450,10 +446,7 @@ void keyboard_func ( unsigned char key, int x, int y )
 		psys_demo++;
 		if (psys_demo > 10 ) psys_demo = 0;
 		psys.SPH_CreateExample ( psys_demo, psys_nmax );
-		break;  
-    case 'i': // marching cubes (iso surface)
-        std::cout << "building voxels" << std::endl;
-        //psys.SPH_BuildVoxels();
+		break;
 	default:
 	break;
   }
@@ -464,7 +457,8 @@ void mouse_click_func ( int button, int state, int x, int y )
 {
   if( state == GLUT_DOWN ) {
     if ( button == GLUT_LEFT_BUTTON )		dragging = DRAG_LEFT;
-    else if ( button == GLUT_RIGHT_BUTTON ) dragging = DRAG_RIGHT;	
+    else if ( button == GLUT_RIGHT_BUTTON ) dragging = DRAG_RIGHT;
+	else if ( button == GLUT_MIDDLE_BUTTON ) dragging = DRAG_MIDDLE;
     last_x = x;
     last_y = y;	
   } else {
@@ -474,55 +468,44 @@ void mouse_click_func ( int button, int state, int x, int y )
 
 void mouse_move_func ( int x, int y )
 {
+	if (glutGetModifiers() != GLUT_ACTIVE_ALT) {
+		return;
+	}
+
 	int dx = x - last_x;
 	int dy = y - last_y;
 
-	switch ( mode ) {
-	case MODE_CAM:
-		if ( dragging == DRAG_LEFT ) {
-			cam_angs.x += dx;
-			cam_angs.y += dy;
-			if ( cam_angs.x >= 360.0 )	cam_angs.x -= 360.0;
-			if ( cam_angs.x < 0 )		cam_angs.x += 360.0;
-			if ( cam_angs.y >= 180.0 )	cam_angs.y = 180.0;
-			if ( cam_angs.y <= -180.0 )	cam_angs.y = -180.0;
+	if ( dragging == DRAG_LEFT ) {
+		cam_angs.x -= dx;
+		cam_angs.y -= dy;
+		if ( cam_angs.x >= 360.0 ) {
+			cam_angs.x -= 360.0;
+		}
+		if ( cam_angs.x < 0 ) {
+			cam_angs.x += 360.0;
+		}
+		if ( cam_angs.y >= 180.0 ) {
+			cam_angs.y -= 180.0;
+		}
+		if ( cam_angs.y <= -180.0 ) {
+			cam_angs.y += -180.0;
+		}
 /*
 			printf ( "Cam Ang: %f %f %f\n", cam_angs.x, cam_angs.y, cam_angs.z );
 			printf ( "Cam To:  %f %f %f\n", cam_to.x, cam_to.y, cam_to.z );
 			printf ( "Cam FOV: %f\n", cam_fov);
 */
-		} else if ( dragging == DRAG_RIGHT ) {
-			cam_angs.z += dy*.15;
-			if ( cam_angs.z < 0)		cam_angs.z = 0;
+	} else if ( dragging == DRAG_RIGHT ) {
+		cam_angs.z -= dy*.15;
+		if ( cam_angs.z < 0)		cam_angs.z = 0;
 /*
 			printf ( "Cam Ang: %f %f %f\n", cam_angs.x, cam_angs.y, cam_angs.z );
 			printf ( "Cam To:  %f %f %f\n", cam_to.x, cam_to.y, cam_to.z );
 			printf ( "Cam FOV: %f\n", cam_fov );
 */
-		}
-		break;
-	case MODE_CAM_TO:
-		if ( dragging == DRAG_LEFT ) {
-			cam_to.x += dx;
-			cam_to.y += dy;			
-		} else if ( dragging == DRAG_RIGHT ) {
-			cam_to.z += dy*.05;
-			if ( cam_to.z < 0) 	cam_to.z = 0;
-		}
-		break;	
-	case MODE_LIGHTPOS:
-		if ( dragging == DRAG_LEFT ) {
-			light[0].x -= dx*.1;
-			light[0].y += dy*.1;		
-			//printf ( "Light: %f %f %f\n", light[0].x, light[0].y, light[0].z );
-		} else if (dragging == DRAG_RIGHT) {
-			light[0].z -= dy*.1;			
-			//printf ( "Light: %f %f %f\n", light[0].x, light[0].y, light[0].z );
-		}	
-		#ifdef USE_SHADOWS
-			setShadowLight ( light[0].x, light[0].y, light[0].z, light_to[0].x, light_to[0].y, light_to[0].z, light_fov );
-		#endif
-		break;
+	} else if ( dragging == DRAG_MIDDLE ) {
+		cam_to.x -= 0.15*dx;
+		cam_to.y += 0.15*dy;
 	}
 
 	if ( x < 10 || y < 10 || x > 1000 || y > 700 ) {
@@ -606,7 +589,7 @@ int main ( int argc, char **argv )
 	glutInitDisplayMode( GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH );
 	glutInitWindowPosition( 100, 100 );
 	glutInitWindowSize( (int) window_width, (int) window_height );
-	glutCreateWindow ( "Fluids v.1 (c) 2008, R. Hoetzlein (ZLib)" );
+	glutCreateWindow ( "Fluids v.1 (c) 2008, R. Hoetzlein (ZLib) extended by Gianni and Yui" );
 
 	//glutFullScreen ();
  

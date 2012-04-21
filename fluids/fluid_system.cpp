@@ -541,7 +541,8 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
 	switch ( n ) {
 	case 0:
 		// Load cube
-		vgrid = new VoxelGrid("voxel/cube_20.voxels");
+		//vgrid = new VoxelGrid("voxel/cube_20.voxels");
+		vgrid = new VoxelGrid("voxel/cube_10.voxels");
 
 		break;
 	case 1:
@@ -630,7 +631,7 @@ void FluidSystem::SPH_ComputePressureGrid ()
 	for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride, i++ ) {
 		p = (Fluid*) dat1;
 
-		sum = 0.0;	
+		sum = 1E-15;	
 		m_NC[i] = 0;
 
 		Grid_FindCells ( p->pos, radius );
@@ -659,15 +660,19 @@ void FluidSystem::SPH_ComputePressureGrid ()
 			m_GridCell[cell] = -1;
 		}
 		p->density = sum * m_Param[SPH_PMASS] * m_Poly6Kern;
-		// YUI MOD
+
 		if (p->state == LIQUID)
 			p->pressure = ( p->density - m_Param[SPH_RESTDENSITY] ) * m_Param[SPH_INTSTIFF];
 		else 
 			p->pressure = ( p->density - m_Param[SPH_RESTDENSITY] ) * INT_STIFF_ICE;
-        if (p->density != 0) {
-            p->density = 1.0f / p->density;
+		//if(p->density != 0)
+		//	std::cout << "NONZero"  << std::endl;
+       // if (p->density != 0) {
+           p->density = 1.0f / p->density;
         //p->density = 1.0;
-        }
+		//} else {
+		 // p->density = 1.0f / (p->density + 1E-10);
+		//}
 	}
 }
 
@@ -816,10 +821,10 @@ Double FluidSystem::eval(const Point3d& location)
 	double dx, dy, dz, sum, xi;
 	double mR, mR2;
 	float radius = m_Param[SPH_SMOOTHRADIUS] / m_Param[SPH_SIMSCALE];
-
+//	std :: cout << "Renderin Radius " << radius << std::endl;
 	position = Vector3DF(location[0],location[1],location[2]);
 	d = m_Param[SPH_SIMSCALE];
-	mR = m_Param[SPH_SMOOTHRADIUS];
+	mR = 0.01;//m_Param[SPH_SMOOTHRADIUS];
 	mR2 = (mR*mR);
 	sum = 0.0;
 
