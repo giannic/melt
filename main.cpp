@@ -594,7 +594,7 @@ int main ( int argc, char **argv )
 	glutInitWindowSize( (int) window_width, (int) window_height );
 	glutCreateWindow ( "Fluids v.1 (c) 2008, R. Hoetzlein (ZLib) extended by Gianni and Yui" );
 
-	glutFullScreen ();
+	//glutFullScreen ();
  
 	// initialize parameters
 	init();

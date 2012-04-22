@@ -38,8 +38,12 @@ void MarchCube::march (IsoSurface& surface)
 	 *
 	 */
 	initVertices(0, vtxGrid[0], function);
+	std:: cout<< "DONE FIRST INIT " << std::endl;
 	initVertices(1, vtxGrid[1], function);
+	std:: cout<< "DONE SECOND INIT " << std::endl;
 	setCubeFlags();
+
+	 
 	/*
 	 * Fill in the back of the grid first (where "forward" is the +z 
 	 * direction. This is done by checking the left- and bottom-edges 
@@ -181,6 +185,8 @@ void MarchCube::march (IsoSurface& surface)
 	}
 
 	surface.calcVNorms();
+	std::cout << "DONE CONSTRUCTION " << std::endl;
+
 
 }
 
@@ -320,6 +326,8 @@ void MarchCube::initVertices (int level,
 
 	Double xCoord = lowerLeft[0];
 	Double xInc = sizex / (Double) resx;
+	//std::cout << "size x " << sizex << std::endl;
+	//std::cout << "inc x " << xInc << std::endl;
 	Double yInc = sizey / (Double) resy;
 	Double zCoord = lowerLeft[2];
 	for (int i = 0; i <= resx; ++i)
@@ -331,6 +339,7 @@ void MarchCube::initVertices (int level,
 			toSet[i][j].setVal(function->eval(toSet[i][j].getPos()));
 			yCoord += yInc;
 		}
+		//std::cout << "finish in x " << i << std::endl;
 		xCoord += xInc;
 	}
 }

@@ -541,8 +541,8 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
 	switch ( n ) {
 	case 0:
 		// Load cube
-		//vgrid = new VoxelGrid("voxel/cube_20.voxels");
-		vgrid = new VoxelGrid("voxel/cube_10.voxels");
+		vgrid = new VoxelGrid("voxel/cube_20.voxels");
+		//vgrid = new VoxelGrid("voxel/cube_10.voxels");
 
 		break;
 	case 1:
@@ -805,9 +805,10 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 
 void FluidSystem::SPH_DrawSurface()
 {
-	m_marchCube->setThreshold(0.5);
+	// Change surface reconstructiong parm
+	m_marchCube->setThreshold(0.001);
 	m_marchCube->setSize((m_Vec[SPH_VOLMAX].x-m_Vec[SPH_VOLMIN].x)+10,(m_Vec[SPH_VOLMAX].y-m_Vec[SPH_VOLMIN].y)+10,(m_Vec[SPH_VOLMAX].z-m_Vec[SPH_VOLMIN].z)+10);
-	m_marchCube->setRes(100,100,100);
+	m_marchCube->setRes(500,500,500);
 	m_marchCube->setCenter(0.0,0.0,0.0);
 	m_marchCube->march(*m_surface);
 }
