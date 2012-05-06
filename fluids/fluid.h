@@ -46,6 +46,9 @@
 		float			temp_eval;
         Status          state;          // true for solid, false for liuqid
         float           mass;
+        bool            anti_grav;
+        bool            on_ground;
+
 	};
 
 #endif /*PARTICLE_H_*/

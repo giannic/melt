@@ -111,9 +111,9 @@
 
 		MarchCube* m_marchCube;
 		IsoSurface* m_surface;
-
-	private:
-
+        bool on_ground;
+        Vector3DF anti_gravity;
+    private:
 		// Smoothed Particle Hydrodynamics
 		double						m_R2, m_Poly6Kern, m_LapKern, m_SpikyKern;		// Kernel functions
 		

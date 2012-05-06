@@ -67,9 +67,12 @@ void FluidSystem::Initialize ( int mode, int total )
 	AddAttribute ( 0, "mass", sizeof ( float ), false );
     AddAttribute ( 0, "adjacents", sizeof ( int ), false );
 
+    AddAttribute (0, "on ground", sizeof ( bool ), false);
+    AddAttribute (0, "anti_grav", sizeof ( bool ), false);
+
 	SPH_Setup ();
 	Reset ( total );
-
+   
     //init marching cube
     m_marchCube = new MarchCube();
     m_surface = new IsoSurface(this);
@@ -95,7 +98,6 @@ void FluidSystem::Reset ( int nmax )
 	m_Toggle [ DRAIN_BARRIER ] = false;
 	m_Param [ SPH_INTSTIFF ] = INT_STIFF_WATER;        //  1.00;
 	m_Param [ SPH_VISC ] = VISC_WATER;
-	m_Param [ SPH_INTSTIFF ] = INT_STIFF_WATER;
 	m_Param [ SPH_EXTSTIFF ] = EXT_STIFF; // 10000; //20000;
 	m_Param [ SPH_SMOOTHRADIUS ] = EFFECTIVE_RADIUS;
 	
@@ -120,6 +122,10 @@ int FluidSystem::AddPoint ()
     f->temp = MIN_T;
     f->state = LIQUID; //SOLID;
     f->mass = 0; // mucho problem?
+
+    f->anti_grav = false;
+    f->on_ground = false;
+  
 	return ndx;
 }
 
@@ -141,7 +147,11 @@ int FluidSystem::AddPointReuse ()
 	f->density = 0; 
 	f->temp = MIN_T;
     f->state = SOLID;
-	f->mass = 1; // mucho problem?
+	f->mass = 1;
+  
+    f->anti_grav = false;
+    f->on_ground = false;
+  
 	return ndx;
 }
 
@@ -160,7 +170,6 @@ void FluidSystem::Run ()
 	#else
     // -- CPU only --
 
-
     start.SetSystemTime ( ACC_NSEC );
     Grid_InsertParticles ();
     //if ( bTiming) { stop.SetSystemTime ( ACC_NSEC ); stop = stop - start; printf ( "INSERT: %s\n", stop.GetReadableTime().c_str() ); }
@@ -176,6 +185,7 @@ void FluidSystem::Run ()
     SPH_DrawDomain();
 
     start.SetSystemTime ( ACC_NSEC );
+    on_ground = false;
     Advance();
     //if ( bTiming) { stop.SetSystemTime ( ACC_NSEC ); stop = stop - start; printf ( "ADV: %s\n", stop.GetReadableTime().c_str() ); }
 		
@@ -213,6 +223,7 @@ void FluidSystem::SPH_DrawDomain ()
 void FluidSystem::Advance ()
 {
 	char *dat1, *dat1_end;
+    char* dat2;
 	Fluid* p;
 	Vector3DF norm, z;
 	Vector3DF dir, accel;
@@ -232,7 +243,9 @@ void FluidSystem::Advance ()
 	ss = m_Param[SPH_SIMSCALE];
 
 	dat1_end = mBuf[0].data + NumPoints()*mBuf[0].stride;
-	for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride ) {
+    int i = 0;
+    
+	for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride, ++i ) {
 		p = (Fluid*) dat1;		
 
 		// Compute Acceleration
@@ -249,12 +262,12 @@ void FluidSystem::Advance ()
 
 		// Z-axis walls
 		diff = 2 * radius - ( p->pos.z - min.z - (p->pos.x - m_Vec[SPH_VOLMIN].x) * m_Param[BOUND_ZMIN_SLOPE] )*ss;
-		if (diff > EPSILON ) {			
+		if (diff > EPSILON && p->state == LIQUID) {			
 			norm.Set ( -m_Param[BOUND_ZMIN_SLOPE], 0, 1.0 - m_Param[BOUND_ZMIN_SLOPE] );
 			adj = stiff * diff - damp * norm.Dot ( p->vel_eval );
-			accel.x += adj * norm.x; accel.y += adj * norm.y; accel.z += adj * norm.z;
-		}		
-
+            accel.x += adj * norm.x; accel.y += adj * norm.y; accel.z += adj * norm.z; 
+		}	
+	
 		diff = 2 * radius - ( max.z - p->pos.z )*ss;
 		if (diff > EPSILON) {
 			norm.Set ( 0, 0, -1 );
@@ -324,7 +337,7 @@ void FluidSystem::Advance ()
 		}
 
 		// Plane gravity
-		if ( m_Param[PLANE_GRAV] > 0) 
+		if ( m_Param[PLANE_GRAV] > 0 && !on_ground)
 			accel += m_Vec[PLANE_GRAV_DIR];
 
 		// Point gravity
@@ -336,7 +349,7 @@ void FluidSystem::Advance ()
 			norm *= m_Param[POINT_GRAV];
 			accel -= norm;
 		}
-
+        
 		// Leapfrog Integration ----------------------------
 		vnext = accel;							
 		vnext *= m_DT;
@@ -410,7 +423,7 @@ void FluidSystem::Advance ()
 			}
 		}
 	}
-
+	
 	m_Time += m_DT;
 }
 
@@ -465,11 +478,8 @@ void FluidSystem::SPH_ComputeKernels ()
 	m_Param [ SPH_PDIST ] = pow ( m_Param[SPH_PMASS] / m_Param[SPH_RESTDENSITY], 1/3.0 );
 	m_R2 = m_Param [SPH_SMOOTHRADIUS] * m_Param[SPH_SMOOTHRADIUS];
 	m_Poly6Kern = 315.0f / (64.0f * 3.141592 * pow( m_Param[SPH_SMOOTHRADIUS], 9) );	// Wpoly6 kernel (denominator part) - 2003 Muller, p.4
-    std::cout << "POLYKERN: " << m_Poly6Kern << std::endl;
 	m_SpikyKern = -45.0f / (3.141592 * pow( m_Param[SPH_SMOOTHRADIUS], 6) );			// Laplacian of viscocity (denominator): PI h^6
 	m_LapKern = 45.0f / (3.141592 * pow( m_Param[SPH_SMOOTHRADIUS], 6) );
-	//std::cout << "M_spikyKern" <<m_SpikyKern << std::endl;
-	//std::cout << "M_SmoothRadius" << m_Param[SPH_SMOOTHRADIUS]<< std::endl;
 }
 
 void FluidSystem::AddVolume ( Vector3DF min, Vector3DF max, float spacing,VoxelGrid* vgrid )
@@ -503,27 +513,6 @@ void FluidSystem::AddVolume ( Vector3DF min, Vector3DF max, float spacing,VoxelG
 		}
 	}
 	std::cout << "count " <<count << std::endl;
-	/*for (float z = 4; z >= 0; z -= 1.00f ) {
-		for (float y = 0; y <= 4; y += 1.0f ) {	
-			for (float x = 0; x <= 4; x += 1.0f ) {
-                Vector3DF index = vgrid->inVoxelGrid(x,y,z);
-				if(index.x >= 0 && index.y >= 0 && index.z >= 0){
-				   // std::cout << "count " <<count << std::endl;
-					count++;
-					p = (Fluid*)GetPoint ( AddPointReuse () );
-					pos.Set ( x, y, z);
-                    p->index = index;
-					//pos.x += -0.05 + float( rand() * 0.1 ) / RAND_MAX;
-					//pos.y += -0.05 + float( rand() * 0.1 ) / RAND_MAX;
-					//pos.z += -0.05 + float( rand() * 0.1 ) / RAND_MAX;
-					p->pos = pos;
-					p->clr = COLORA( (x-min.x)/dx, (y-min.y)/dy, (z-min.z)/dz, 1);
-
-				}
-			}
-		}
-	}
-	*/
 }
 
 void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cube
@@ -554,7 +543,7 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
 	break;
 
 	}
-	if(!vgrid) {
+	if (!vgrid) {
 		return;
 	}
  	nmax = vgrid->theDim[0] * vgrid->theDim[1] * vgrid->theDim[2];
@@ -598,6 +587,7 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
 	std:: cout << "voxelsize " << vgrid->voxelSize[0] << std::endl;
     Fluid* f;
 	Vector3DF pos;
+
 
 	float cell_size = m_Param[SPH_SMOOTHRADIUS]*2.0;			// Grid cell size (2r)
 	Grid_Setup ( m_Vec[SPH_VOLMIN], m_Vec[SPH_VOLMAX], m_Param[SPH_SIMSCALE], cell_size, 1.0 ); // Setup grid
@@ -661,10 +651,11 @@ void FluidSystem::SPH_ComputePressureGrid ()
 		}
 		p->density = sum * m_Param[SPH_PMASS] * m_Poly6Kern;
 
-		if (p->state == LIQUID)
+        if (p->state == LIQUID) {
 			p->pressure = ( p->density - m_Param[SPH_RESTDENSITY] ) * m_Param[SPH_INTSTIFF];
-		else 
+        } else {
 			p->pressure = ( p->density - m_Param[SPH_RESTDENSITY] ) * INT_STIFF_ICE;
+        }
 		//if(p->density != 0)
 		//	std::cout << "NONZero"  << std::endl;
        // if (p->density != 0) {
@@ -673,13 +664,14 @@ void FluidSystem::SPH_ComputePressureGrid ()
 		//} else {
 		 // p->density = 1.0f / (p->density + 1E-10);
 		//}
-	}
+    }
 }
 
 // Compute Forces - Using spatial grid with saved neighbor table. Fastest.
 void FluidSystem::SPH_ComputeForceGridNC ()
 {
 	char *dat1, *dat1_end;	
+    char* dat2;
 	Fluid *p, *pcurr;
 	Vector3DF force, fcurr;
 	register float pterm, vterm, dterm;
@@ -692,6 +684,7 @@ void FluidSystem::SPH_ComputeForceGridNC ()
     float neighbor_temp; // new additions to temperature by other particles
     float sa, Qi, dT; // air contribution to new temperature
     int pi, pj, pk; 
+   
 
 	d = m_Param[SPH_SIMSCALE];
 	mR = m_Param[SPH_SMOOTHRADIUS];
@@ -701,33 +694,64 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 	dat1_end = mBuf[0].data + NumPoints()*mBuf[0].stride;
     i = 0;
 	int count = 1; 
-	for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride, i++ ) {
+    Vector3DF anti_grav;
+    
+    // Checking the boundary
+    double diff, adj;
+	double stiff = m_Param[SPH_EXTSTIFF];
+	double damp = m_Param[SPH_EXTDAMP];
+	double radius = m_Param[SPH_PRADIUS];
+    double ss = m_Param[SPH_SIMSCALE];
+
+    bool touch_ground = false;
+    Vector3DF anti_gravity;
+    Vector3DF norm;
+	Vector3DF min = m_Vec[SPH_VOLMIN];
+	Vector3DF max = m_Vec[SPH_VOLMAX];
+
+    for( dat2 = mBuf[0].data; dat2 < dat1_end; dat2 += mBuf[0].stride) {
+    	// Z-axis walls
+        p = (Fluid*) dat2;
+		diff = 2 * radius - ( p->pos.z - min.z - (p->pos.x - m_Vec[SPH_VOLMIN].x) * m_Param[BOUND_ZMIN_SLOPE] )*ss;
+		if (diff > EPSILON && p->state == SOLID) {			
+			norm.Set ( -m_Param[BOUND_ZMIN_SLOPE], 0, 1.0 - m_Param[BOUND_ZMIN_SLOPE] );
+			adj = stiff * diff - damp * norm.Dot ( p->vel_eval );
+            anti_gravity = norm;
+            anti_gravity *= adj;
+            anti_gravity /= m_Param[SPH_PMASS];
+            touch_ground = true;
+		}
+    }
+
+    for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride, i++ ) {
         // reset all instance variables
 		p = (Fluid*) dat1;
-		count++;
-		force.Set (0, 0, 0);
+        if (touch_ground && p->state == SOLID) {
+            force.Set(anti_gravity.x, anti_gravity.y, anti_gravity.z);
+        } else {
+            force.Set (0, 0, 0);
+        }
+        
 		neighbor_temp = 0.0; sa = 0.0; Qi = 0.0;
         pi = p->index.x;
         pj = p->index.y;
         pk = p->index.z;
 
 		// Set the p->temp_eval == 0
-
-        if (p->state == SOLID) { // hack to prevent gravity on solids for now
-            force -= m_Vec[PLANE_GRAV_DIR];
-            force /= m_Param[SPH_PMASS];
-        } // take out after interfacial tension is implemeneted
-
+                    
         for (int j=0; j < m_NC[i]; j++ ) { 
 			// Loop through all neighbors
             pcurr = (Fluid*) (mBuf[0].data + m_Neighbor[i][j]*mBuf[0].stride);
             dx = ( p->pos.x - pcurr->pos.x)*d; // dist in cm
             dy = ( p->pos.y - pcurr->pos.y)*d;
             dz = ( p->pos.z - pcurr->pos.z)*d;
+
             c = ( mR - m_NDist[i][j] ); //distance between current and neighbor?
             pterm = -0.5f * c * m_SpikyKern * ( p->pressure + pcurr->pressure) / m_NDist[i][j];
+            
             dterm = c * p->density * pcurr->density;
-            vterm = m_LapKern * visc;
+
+            vterm = m_LapKern * visc; 
 
             Vector3DF diff = p->pos; // distance between particle and its neighbor
             diff -= pcurr->pos;
@@ -759,15 +783,16 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 					force.y += K_ICE * dist.y;
 					force.z += K_ICE * dist.z;
 				}
-            }
-        }
-        p->sph_force = force;
+            }  // END IF p->state is LIQUID
+        }  
 
+        p->sph_force = force;
 		// Apply thermal diffusion based on the state of particle i
-		if (p->state == LIQUID)
+        if (p->state == LIQUID) {
 			neighbor_temp *= C_WATER;
-		else 
+        } else { 
 			neighbor_temp *= C_ICE;
+        }
 
 		p->temp_eval += neighbor_temp;
 
@@ -776,18 +801,14 @@ void FluidSystem::SPH_ComputeForceGridNC ()
             //sa = (6.0 - vgrid->adj[pi][pj][pk])/6.0; // * (edge * edge * 6.0);
 			//sa = (6.0 - vgrid->adj[pi][pj][pk])/(vgrid->voxelSize[0] * vgrid->voxelSize[0] * 6.0);// * (edge * edge * 6.0);
             sa = (vgrid->voxelSize[0] * vgrid->voxelSize[0])*(6.0 - vgrid->adj[pi][pj][pk]);
-            //Qi = THERMAL_CONDUCTIVITY_ICE * (AMBIENT_T - p->temp) * sa;
 			Qi = THERMAL_CONDUCTIVITY * (AMBIENT_T - p->temp) * sa;
             dT = Qi / (HEAT_CAPACITY_ICE * MASS_H2O);//m_Param [ SPH_PMASS ]);
         } else if (p->state == LIQUID) {
-            //Qi = THERMAL_CONDUCTIVITY_WATER * (AMBIENT_T - p->temp);
 			Qi = THERMAL_CONDUCTIVITY * (AMBIENT_T - p->temp);
             dT = Qi / (HEAT_CAPACITY_WATER * MASS_H2O);//m_Param [ SPH_PMASS ]);
         }
-        //p->temp += dT;
-        //p->temp += neighbor_temp;
-        //p->temp_eval = p->temp; //what?
         p->temp_eval += dT; //what?
+
         
 		if (p->temp > ICE_T && p->state == SOLID) { // change state and update neighboring voxels
             vgrid->data[pi][pj][pk] = 0; // set to no particle
@@ -806,9 +827,9 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 void FluidSystem::SPH_DrawSurface()
 {
 	// Change surface reconstructiong parm
-	m_marchCube->setThreshold(0.001);
+	m_marchCube->setThreshold(march_threshold);
 	m_marchCube->setSize((m_Vec[SPH_VOLMAX].x-m_Vec[SPH_VOLMIN].x)+10,(m_Vec[SPH_VOLMAX].y-m_Vec[SPH_VOLMIN].y)+10,(m_Vec[SPH_VOLMAX].z-m_Vec[SPH_VOLMIN].z)+10);
-	m_marchCube->setRes(500,500,500);
+	m_marchCube->setRes(march_resolution, march_resolution, march_resolution);
 	m_marchCube->setCenter(0.0,0.0,0.0);
 	m_marchCube->march(*m_surface);
 }
@@ -821,11 +842,12 @@ Double FluidSystem::eval(const Point3d& location)
 	double c, d, dsq, r;
 	double dx, dy, dz, sum, xi;
 	double mR, mR2;
-	float radius = m_Param[SPH_SMOOTHRADIUS] / m_Param[SPH_SIMSCALE];
-//	std :: cout << "Renderin Radius " << radius << std::endl;
+	float radius = (m_Param[SPH_SMOOTHRADIUS]) / (m_Param[SPH_SIMSCALE]);
+
+    //std :: cout << "Renderin Radius " << radius << std::endl;
 	position = Vector3DF(location[0],location[1],location[2]);
 	d = m_Param[SPH_SIMSCALE];
-	mR = 0.01;//m_Param[SPH_SMOOTHRADIUS];
+	mR = m_Param[SPH_SMOOTHRADIUS];
 	mR2 = (mR*mR);
 	sum = 0.0;
 
