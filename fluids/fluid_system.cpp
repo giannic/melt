@@ -530,7 +530,7 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
 	switch ( n ) {
 	case 0:
 		// Load cube
-		vgrid = new VoxelGrid("voxel/cube_20.voxels");
+		vgrid = new VoxelGrid("voxel/cube_80_v40.voxels");
 		//vgrid = new VoxelGrid("voxel/cube_10.voxels");
 
 		break;
@@ -583,7 +583,7 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
 	printf ( "Spacing: %f\n", ss);
  
 	// Hacking for now...Need to find good mapping   vgrid->voxelSize[0]
- 	AddVolume ( m_Vec[SPH_INITMIN], m_Vec[SPH_INITMAX], vgrid->voxelSize[0], vgrid);//ss, vgrid );	// Create the particles
+ 	AddVolume ( m_Vec[SPH_INITMIN], m_Vec[SPH_INITMAX], vgrid->voxelSize[0], vgrid) ;// vgrid->voxelSize[0], vgrid);//ss, vgrid );	// Create the particles
 	std:: cout << "voxelsize " << vgrid->voxelSize[0] << std::endl;
     Fluid* f;
 	Vector3DF pos;
@@ -842,7 +842,7 @@ Double FluidSystem::eval(const Point3d& location)
 	double c, d, dsq, r;
 	double dx, dy, dz, sum, xi;
 	double mR, mR2;
-	float radius = (m_Param[SPH_SMOOTHRADIUS]) / (m_Param[SPH_SIMSCALE]);
+	float radius = (m_Param[SPH_SMOOTHRADIUS]) / (4.0 * m_Param[SPH_SIMSCALE]);
 
     //std :: cout << "Renderin Radius " << radius << std::endl;
 	position = Vector3DF(location[0],location[1],location[2]);

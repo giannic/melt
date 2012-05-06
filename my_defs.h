@@ -32,28 +32,28 @@ static const float VOLMIN_X = -2;
 static const float VOLMIN_Y = -2;
 static const float VOLMIN_Z = 0;
 
-static const float VOLMAX_X = 40;//20;
-static const float VOLMAX_Y = 20;//20;
-static const float VOLMAX_Z = 40;//40;
+static const float VOLMAX_X = 90;//40;//20;
+static const float VOLMAX_Y = 90;//20;//20;
+static const float VOLMAX_Z = 90;//40;
 
 // Hacking for now...Need to find Good mapping
 static const float INITMIN_X = 2;//-30;
 static const float INITMIN_Y = 2;//-30;
-static const float INITMIN_Z = 5;
+static const float INITMIN_Z = 2;
 
-static const float INITMAX_X = 35;
-static const float INITMAX_Y = 25;
-static const float INITMAX_Z = 30;
+static const float INITMAX_X = 80;
+static const float INITMAX_Y = 80;
+static const float INITMAX_Z = 80;
 
 // rendering radius for voxel space
 static const float RENDER_GRID_DIV = 1;
 static const float RENDER_RADIUS = 1;
 
 // Init fluid system with OBJ
-#define ADJUST_SCALE 1.521587
+#define ADJUST_SCALE 5//1.521587
 #define ADJUST_OFFSET_X 2//-30
 #define ADJUST_OFFSET_Y 2//-10
-#define ADJUST_OFFSET_Z 5//-30
+#define ADJUST_OFFSET_Z 2//-30
 
 // Marching cube
 static const double MARCH_THRESHOLD = 0.001;
