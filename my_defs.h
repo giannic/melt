@@ -2,14 +2,15 @@
 #define MYDEFS
 #include <math.h>
 
-//#define OBJECT_PATH "voxel/cube_80_v40.voxels"
+//#define OBJECT_PATH "voxel/cube_20.voxels"  
+//#define OBJECT_PATH "voxel/cube_80_v20.voxels"
 #define OBJECT_PATH "voxel/dragon_40.voxels"
 //#define OBJECT_PATH "voxel/happy_30.voxels"
 
 // State of particle
 enum Status { SOLID, LIQUID};
 
-static const float AMBIENT_T = 373; //283;
+static const float AMBIENT_T = 283; //373;
 static const float C_ICE = 0.5;
 static const float C_WATER = 0.1;
 static const float MIN_T = 253;
@@ -30,6 +31,8 @@ static const float THERMAL_CONDUCTIVITY_WATER = 0.00267;//0.58;// in watts perr 
 static const float THERMAL_CONDUCTIVITY = 0.00267; //IUDN
 static const float HEAT_CAPACITY_ICE = 2.11; // units: kJ/kg-K
 static const float HEAT_CAPACITY_WATER = 4.181; // units: kJ/kg-K
+
+static const float ICE_WATER = -50.0;
 
 // Init fluid system
 

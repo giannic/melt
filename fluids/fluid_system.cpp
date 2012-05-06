@@ -688,10 +688,12 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 
     bool touch_ground = false;
     Vector3DF anti_gravity;
+	Vector3DF ice_force;
     Vector3DF norm;
 	Vector3DF min = m_Vec[SPH_VOLMIN];
 	Vector3DF max = m_Vec[SPH_VOLMAX];
 
+	// Calculate the anti-gravity force
     for( dat2 = mBuf[0].data; dat2 < dat1_end; dat2 += mBuf[0].stride) {
     	// Z-axis walls
         p = (Fluid*) dat2;
@@ -703,14 +705,38 @@ void FluidSystem::SPH_ComputeForceGridNC ()
             anti_gravity *= adj;
             anti_gravity /= m_Param[SPH_PMASS];
             touch_ground = true;
+			break;
 		}
     }
 
+	// Calculate the ice-water force
+	i = 0;
+	for ( dat2 = mBuf[0].data; dat2 < dat1_end; dat2 += mBuf[0].stride, ++i) {
+		p = (Fluid*) dat2; 
+		if (p->state == SOLID) {
+			for (int j = 0; j < m_NC[i]; ++j) {
+				pcurr = (Fluid*) (mBuf[0].data + m_Neighbor[i][j]*mBuf[0].stride);
+				if (pcurr->state == LIQUID){
+					Vector3DF dist = pcurr->pos;
+					dist -= p->pos;
+					float length  = dist.Length();
+					dist /= (length * length);
+
+					ice_force.x += ICE_WATER * K_ICE * dist.x;
+					ice_force.y += ICE_WATER * K_ICE * dist.y;
+					ice_force.z += ICE_WATER * K_ICE * dist.z;
+				}
+			}  // END OF FINDING NEIGHBOR FOR-LOOP 
+		}  // END OF IF P->STATE IS SOLID
+	}  // EBD OF PARTICLE FOR-LOOP 	
+
+	i = 0;
     for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride, i++ ) {
         // reset all instance variables
 		p = (Fluid*) dat1;
         if (touch_ground && p->state == SOLID) {
             force.Set(anti_gravity.x, anti_gravity.y, anti_gravity.z);
+			force += ice_force;
         } else {
             force.Set (0, 0, 0);
         }
@@ -720,7 +746,6 @@ void FluidSystem::SPH_ComputeForceGridNC ()
         pj = p->index.y;
         pk = p->index.z;
 
-		// Set the p->temp_eval == 0
                     
         for (int j=0; j < m_NC[i]; j++ ) { 
 			// Loop through all neighbors
