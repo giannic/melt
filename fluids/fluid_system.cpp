@@ -827,9 +827,9 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 void FluidSystem::SPH_DrawSurface()
 {
 	// Change surface reconstructiong parm
-	m_marchCube->setThreshold(march_threshold);
+	m_marchCube->setThreshold(MARCH_THRESHOLD);
 	m_marchCube->setSize((m_Vec[SPH_VOLMAX].x-m_Vec[SPH_VOLMIN].x)+10,(m_Vec[SPH_VOLMAX].y-m_Vec[SPH_VOLMIN].y)+10,(m_Vec[SPH_VOLMAX].z-m_Vec[SPH_VOLMIN].z)+10);
-	m_marchCube->setRes(march_resolution, march_resolution, march_resolution);
+	m_marchCube->setRes(MARCH_RESO, MARCH_RESO, MARCH_RESO);
 	m_marchCube->setCenter(0.0,0.0,0.0);
 	m_marchCube->march(*m_surface);
 }

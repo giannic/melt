@@ -56,7 +56,7 @@ static const float RENDER_RADIUS = 1;
 #define ADJUST_OFFSET_Z 5//-30
 
 // Marching cube
-static const double march_threshold = 0.001;
-static const double march_resolution = 800;
+static const double MARCH_THRESHOLD = 0.001;
+static const double MARCH_RESO = 800;
 
 #endif MYDEFS
