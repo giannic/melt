@@ -524,32 +524,15 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
 	m_Vec [ SPH_VOLMAX ].Set ( VOLMAX_X, VOLMAX_Y, VOLMAX_Z );
 	m_Vec [ SPH_INITMIN ].Set ( INITMIN_X, INITMIN_Y, INITMIN_Z);
 	m_Vec [ SPH_INITMAX ].Set ( INITMAX_X, INITMAX_Y, INITMAX_Z );
-	//if (vgrid)
-		//delete vgrid;
 
-	switch ( n ) {
-	case 0:
-		// Load cube
-		vgrid = new VoxelGrid("voxel/cube_80_v40.voxels");
-		//vgrid = new VoxelGrid("voxel/cube_10.voxels");
+    vgrid = new VoxelGrid(OBJECT_PATH);
 
-		break;
-	case 1:
-		// Load dragon
-		vgrid = new VoxelGrid("voxel/dragon_40.voxels");
-	break;
-	case 2:
-		vgrid = new VoxelGrid("voxel/happy_30.voxels");
-	break;
-
-	}
 	if (!vgrid) {
 		return;
 	}
  	nmax = vgrid->theDim[0] * vgrid->theDim[1] * vgrid->theDim[2];
 
 	//ss = vgrid->voxelSize[0];
-	//std::cout << "nmax" << nmax  << std::endl;
 
 	Reset ( nmax );
 

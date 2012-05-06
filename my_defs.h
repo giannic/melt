@@ -2,6 +2,10 @@
 #define MYDEFS
 #include <math.h>
 
+//#define OBJECT_PATH "voxel/cube_80_v40.voxels"
+#define OBJECT_PATH "voxel/dragon_40.voxels"
+//#define OBJECT_PATH "voxel/happy_30.voxels"
+
 // State of particle
 enum Status { SOLID, LIQUID};
 
@@ -28,29 +32,32 @@ static const float HEAT_CAPACITY_ICE = 2.11; // units: kJ/kg-K
 static const float HEAT_CAPACITY_WATER = 4.181; // units: kJ/kg-K
 
 // Init fluid system
+
+// start of the container
 static const float VOLMIN_X = -2;
 static const float VOLMIN_Y = -2;
 static const float VOLMIN_Z = 0;
 
-static const float VOLMAX_X = 90;//40;//20;
-static const float VOLMAX_Y = 90;//20;//20;
-static const float VOLMAX_Z = 90;//40;
+// end of the container
+static const float VOLMAX_X = 40;//40;//20;
+static const float VOLMAX_Y = 20;//20;//20;
+static const float VOLMAX_Z = 40;//40;
 
-// Hacking for now...Need to find Good mapping
+// start of the voxel space
 static const float INITMIN_X = 2;//-30;
 static const float INITMIN_Y = 2;//-30;
 static const float INITMIN_Z = 2;
 
+// end of the voxel space
 static const float INITMAX_X = 80;
 static const float INITMAX_Y = 80;
 static const float INITMAX_Z = 80;
 
 // rendering radius for voxel space
 static const float RENDER_GRID_DIV = 1;
-static const float RENDER_RADIUS = 1;
 
 // Init fluid system with OBJ
-#define ADJUST_SCALE 5//1.521587
+#define ADJUST_SCALE 1.521587  // Adjust number /density of loaded particles
 #define ADJUST_OFFSET_X 2//-30
 #define ADJUST_OFFSET_Y 2//-10
 #define ADJUST_OFFSET_Z 2//-30
