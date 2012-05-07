@@ -148,7 +148,7 @@ int FluidSystem::AddPointReuse ()
 	f->temp = MIN_T;
     f->state = SOLID;
 	f->mass = 1;
-	f->torque = Vector3::ZERO; // Vector3(1.0f, 1.0f, 1.0f);
+	f->torque = Vector3(1.0f, 1.0f, 1.0f);
 	f->angular_momentum =  Vector3(1.0f, 1.0f, 1.0f);
 	f->m_transformation = Matrix4::IDENTITY;
 	return ndx;
@@ -181,7 +181,7 @@ void FluidSystem::Run ()
     SPH_ComputeForceGridNC ();
 
 	// Torque
-	ComputeAngularVelocity();
+	//ComputeAngularVelocity();
     //if ( bTiming) { stop.SetSystemTime ( ACC_NSEC ); stop = stop - start; printf ( "FORCE: %s\n", stop.GetReadableTime().c_str() ); }
 
     SPH_DrawDomain();
@@ -368,26 +368,27 @@ void FluidSystem::Advance ()
 		p->vel = vnext;
 		vnext *= m_DT/ss;
 
-		// Advance transformation
-		angular_speed = p->angular_velocity.length();
-		axis = p->angular_velocity.normalisedCopy();
+		if (p->state == SOLID) {
+		//	new_position = p->m_transformation * Vector3(p->pos.x, p->pos.y, p->pos.z);// Vector3::ZERO;
+		 //   p->pos = Vector3DF(new_position.x, new_position.y, new_position.z);
+		}
+	    //if (new_position.x !=0 || new_position.y !=0 || new_position.z !=0)
+		//	std::cout << "torque " << new_position.x << " " << new_position.y << " " << new_position.z << std::endl;
+		// with torque
+	  	//p->pos += vnext;
 		
+		// Advance transformation
+		/*angular_speed = p->angular_velocity.length();
+		axis = p->angular_velocity.normalisedCopy();
+//		axis = Vector3::ZERO;		
 		new_orientation = Quaternion(angular_speed * m_DT,axis) *
 			                        (p->m_transformation.extractQuaternion());
 		new_orientation.normalise();
 		
 		p->m_transformation.makeTransform(Vector3(p->pos.x, p->pos.y, p->pos.z),
 			                              Vector3::UNIT_SCALE, new_orientation);
-		if (p->state == SOLID) {
-			//new_position = p->m_transformation * Vector3::ZERO;
-			//p->pos = Vector3DF(new_position.x, new_position.y, new_position.z);
-		}
-	    //if (new_position.x !=0 || new_position.y !=0 || new_position.z !=0)
-		//	std::cout << "torque " << new_position.x << " " << new_position.y << " " << new_position.z << std::endl;
-		// with torque
 		
-		//p->pos += vnext;
-		
+		*/
 		// with out torque
 		p->pos += vnext;						// p(t+1) = p(t) + v(t+1/2) dt
 
@@ -607,7 +608,7 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax )  //currently creates a c
 	Vector3DF center = m_Vec [ SPH_INITMIN ];
 	center += m_Vec [ SPH_INITMAX];
 	center *= 0.5;
-	center_of_mass = Vector3(center.x, center.y, center.z);
+	center_of_mass = Vector3(0,0,0);//center.x, center.y, center.z);
 
 	// Local torque inertia of each particle
 	float radius = ((float)m_Param[SPH_PRADIUS]);
@@ -1023,7 +1024,6 @@ void FluidSystem::ComputeAngularVelocity(){
 	for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride) {
 		p = (Fluid*) dat1;
 		if (p->state == SOLID) {
-			p_position = Vector3(p->pos.x, p->pos.y, p->pos.z);
 			delta_omega = ComputeInverseInertia(p) * (p->angular_momentum);
 			p->angular_velocity = delta_omega;
 		}  // END OF IF p->state is SOLID
@@ -1048,7 +1048,7 @@ Double FluidSystem::eval(const Point3d& location)
 	double c, d, dsq, r;
 	double dx, dy, dz, sum, xi;
 	double mR, mR2;
-	float radius = (m_Param[SPH_SMOOTHRADIUS]) / (4.0 * m_Param[SPH_SIMSCALE]);
+	float radius = (m_Param[SPH_SMOOTHRADIUS]) / (m_Param[SPH_SIMSCALE]);
 
     //std :: cout << "Renderin Radius " << radius << std::endl;
 	position = Vector3DF(location[0],location[1],location[2]);

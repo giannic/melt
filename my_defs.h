@@ -17,14 +17,14 @@ static const float C_WATER = 0.1;
 static const float MIN_T = 253;
 static const float MAX_T = 373;
 static const float ICE_T = 273;
-static const float K_WATER = 0.01 ;//71.97;
-static const float K_ICE = 0.5; //* 10000;//75.64;rr
+static const float K_WATER = 1.0;//0.01 ;//71.97;
+static const float K_ICE = 20.0; //* 10000;//75.64;rr
 static const float MASS_H2O =  0.0008; //2.99;// * pow(10.0, -23);
 static const float VISC_WATER = 0.2;
 static const float EFFECTIVE_RADIUS = 0.0043; //0.0053 //1.1/2;  // 0.01
-static const float INT_STIFF_ICE = 0.05;  // 0.5
+static const float INT_STIFF_ICE = 0.01;  // 0.5
 static const float INT_STIFF_WATER = 0.15; 
-static const float EXT_STIFF = 4000;
+static const float EXT_STIFF = 3000;
 static const float P_PRADIUS = 1.1; // 1.1;
 
 static const float THERMAL_CONDUCTIVITY_ICE = 0.00267;//2.18;// in watts per meter kelvin
@@ -34,7 +34,7 @@ static const float HEAT_CAPACITY_ICE = 1.0; // 2.11; // units: kJ/kg-K
 static const float HEAT_CAPACITY_WATER = 1.0; //4.181; // units: kJ/kg-K
 
 // Parameter for the ice-water particle
-static const float ICE_WATER = -21.0;
+static const float ICE_WATER = -0.5;
 static const float BOUND_LIQUID = 280;
 
 // Init fluid system
@@ -63,7 +63,7 @@ static const float INITMAX_Z = 80;
 static const float RENDER_GRID_DIV = 1;
 
 // Init fluid system with OBJ
-#define ADJUST_SCALE 2;//1.521587  // Adjust number /density of loaded particles
+#define ADJUST_SCALE 1.8;//1.521587  // Adjust number /density of loaded particles
 #define ADJUST_OFFSET_X 2//-30
 #define ADJUST_OFFSET_Y 2//-10
 #define ADJUST_OFFSET_Z 2//-30

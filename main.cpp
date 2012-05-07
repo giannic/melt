@@ -332,8 +332,8 @@ void display ()
 	
 	if (is_recording) {
 		grabScreen();
-		psys.SPH_DrawSurface();
-		exportOBJ();
+		//psys.SPH_DrawSurface();
+		//exportOBJ();
 	}
 	
 	// Do simulation!
