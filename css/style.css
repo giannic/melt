@@ -1,0 +1,88 @@
+* {
+    margin: 0px;
+    padding: 0px;
+}
+
+body {
+    background: url('http://www.giannic.com/img/vbg.png');
+}
+
+#top {
+    height: 8px;
+    background-color: #393939;
+}
+
+#main {
+    width: 880px;
+    margin: 0px auto;
+    padding: 30px 40px 30px 40px;
+    border-width: 0px 1px 0px 1px;
+    border-color: #FFFFFF #CCCCCC #FFFFFF #CCCCCC;
+    border-style: solid;
+    background-color: #FFFFFF;
+}
+
+#heading {
+    font-family: sans-serif;
+    font-size: 36px;
+    color: #000000;
+    font-weight: 700;
+    line-height: 39px;
+    letter-spacing: -2px;
+    margin: 0px 0px 5px 0px;
+}
+
+.sub-heading {
+    font-family: sans-serif;
+    font-size: 20px;
+    color: #888888;
+    font-weight: 100;
+    line-height: 30px;
+    font-variant: normal;
+    letter-spacing: -1px;
+    margin: 0px 0px 30px 0px;
+}
+
+.section-heading {
+    font-family: sans-serif;
+    font-size: 22px;
+    color: #111111;
+    font-weight: 300;
+    line-height: 36px;
+    margin: 0px 0px 5px 0px;
+}
+
+.author {
+    font-family: sans-serif;
+    font-size: 12px;
+    color: #222222;
+    font-weight: 100;
+    letter-spacing: 1px;
+    margin: 0px 0px 30px 0px;
+}
+
+.content {
+    font-family: sans-serif;
+    font-size: 16px;
+    color: #111111;
+    font-weight: 100;
+    line-height: 36px;
+    margin: 0px 20px 30px 20px;
+}
+
+#toc {
+    list-style-type: upper-roman;
+    margin: 0px 0px 30px 50px;
+}
+
+.list {
+    list-style-type: square;
+    margin: 0px 0px 30px 40px;
+}
+
+/* images */
+.equation {
+    display: block;
+    margin: 10px auto;
+
+}

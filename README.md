@@ -1,5 +1,5 @@
 # Smoothed-Particle Hydrodynamics Ice Melting Simulation
-Advisors/Staff: Joe Kider, Tiantian Liu, Peter Kutz \\
+Advisors/Staff: Joe Kider, Tiantian Liu, Peter Kutz
 ## Overview
 This readme is a running collection of notes, at the moment mainly for the purposes of submission. This will also be useful in the further future.
 ## Blog
