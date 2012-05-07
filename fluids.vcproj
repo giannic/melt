@@ -126,7 +126,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="fluids;common;DevIL1.6.7\include"
+				AdditionalIncludeDirectories="fluids;common;DevIL1.6.7\include;OgreMath"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;FREEGLUT_STATIC"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -219,10 +219,6 @@
 			</File>
 			<File
 				RelativePath=".\fluids\impsurface.h"
-				>
-			</File>
-			<File
-				RelativePath=".\main.h"
 				>
 			</File>
 			<File
@@ -359,6 +355,66 @@
 			</File>
 			<File
 				RelativePath=".\include\timer.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="OgreMath"
+			>
+			<File
+				RelativePath=".\OgreMath\OgreCommon.h"
+				>
+			</File>
+			<File
+				RelativePath=".\OgreMath\OgreMath.h"
+				>
+			</File>
+			<File
+				RelativePath=".\OgreMath\OgreMatrix3.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\OgreMath\OgreMatrix3.h"
+				>
+			</File>
+			<File
+				RelativePath=".\OgreMath\OgreMatrix4.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\OgreMath\OgreMatrix4.h"
+				>
+			</File>
+			<File
+				RelativePath=".\OgreMath\OgreQuaternion.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\OgreMath\OgreQuaternion.h"
+				>
+			</File>
+			<File
+				RelativePath=".\OgreMath\OgreVector2.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\OgreMath\OgreVector2.h"
+				>
+			</File>
+			<File
+				RelativePath=".\OgreMath\OgreVector3.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\OgreMath\OgreVector3.h"
+				>
+			</File>
+			<File
+				RelativePath=".\OgreMath\OgreVector4.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\OgreMath\OgreVector4.h"
 				>
 			</File>
 		</Filter>

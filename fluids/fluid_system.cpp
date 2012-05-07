@@ -67,9 +67,10 @@ void FluidSystem::Initialize ( int mode, int total )
 	AddAttribute ( 0, "mass", sizeof ( float ), false );
     AddAttribute ( 0, "adjacents", sizeof ( int ), false );
 
-    AddAttribute (0, "on ground", sizeof ( bool ), false);
-    AddAttribute (0, "anti_grav", sizeof ( bool ), false);
-
+	AddAttribute ( 0, "torque", sizeof ( Vector3 ), false);
+	AddAttribute ( 0, "angular_velocity", sizeof ( Vector3 ), false);
+	AddAttribute ( 0, "angular_momentum", sizeof( Vector3 ), false);
+	AddAttribute ( 0, "m_transformation", sizeof ( Matrix4 ), false);
 	SPH_Setup ();
 	Reset ( total );
    
@@ -122,10 +123,9 @@ int FluidSystem::AddPoint ()
     f->temp = MIN_T;
     f->state = LIQUID; //SOLID;
     f->mass = 0; // mucho problem?
-
-    f->anti_grav = false;
-    f->on_ground = false;
-  
+	f->torque = Vector3::ZERO; //Vector3(1.0f, 1.0f, 1.0f);
+	f->angular_momentum =  Vector3(1.0f,1.0f, 1.0f);
+	f->m_transformation = Matrix4::IDENTITY;
 	return ndx;
 }
 
@@ -148,10 +148,9 @@ int FluidSystem::AddPointReuse ()
 	f->temp = MIN_T;
     f->state = SOLID;
 	f->mass = 1;
-  
-    f->anti_grav = false;
-    f->on_ground = false;
-  
+	f->torque = Vector3::ZERO; // Vector3(1.0f, 1.0f, 1.0f);
+	f->angular_momentum =  Vector3(1.0f, 1.0f, 1.0f);
+	f->m_transformation = Matrix4::IDENTITY;
 	return ndx;
 }
 
@@ -180,6 +179,9 @@ void FluidSystem::Run ()
 
     start.SetSystemTime ( ACC_NSEC );
     SPH_ComputeForceGridNC ();
+
+	// Torque
+	ComputeAngularVelocity();
     //if ( bTiming) { stop.SetSystemTime ( ACC_NSEC ); stop = stop - start; printf ( "FORCE: %s\n", stop.GetReadableTime().c_str() ); }
 
     SPH_DrawDomain();
@@ -244,6 +246,12 @@ void FluidSystem::Advance ()
 
 	dat1_end = mBuf[0].data + NumPoints()*mBuf[0].stride;
     int i = 0;
+
+	// Torque
+	Quaternion new_orientation;
+	float angular_speed;
+	Vector3 axis;
+	Vector3 new_position;
     
 	for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride, ++i ) {
 		p = (Fluid*) dat1;		
@@ -359,13 +367,37 @@ void FluidSystem::Advance ()
 		p->vel_eval *= 0.5;					// v(t+1) = [v(t-1/2) + v(t+1/2)] * 0.5		used to compute forces later
 		p->vel = vnext;
 		vnext *= m_DT/ss;
+
+		// Advance transformation
+		angular_speed = p->angular_velocity.length();
+		axis = p->angular_velocity.normalisedCopy();
+		
+		new_orientation = Quaternion(angular_speed * m_DT,axis) *
+			                        (p->m_transformation.extractQuaternion());
+		new_orientation.normalise();
+		
+		p->m_transformation.makeTransform(Vector3(p->pos.x, p->pos.y, p->pos.z),
+			                              Vector3::UNIT_SCALE, new_orientation);
+		if (p->state == SOLID) {
+			//new_position = p->m_transformation * Vector3::ZERO;
+			//p->pos = Vector3DF(new_position.x, new_position.y, new_position.z);
+		}
+	    //if (new_position.x !=0 || new_position.y !=0 || new_position.z !=0)
+		//	std::cout << "torque " << new_position.x << " " << new_position.y << " " << new_position.z << std::endl;
+		// with torque
+		
+		//p->pos += vnext;
+		
+		// with out torque
 		p->pos += vnext;						// p(t+1) = p(t) + v(t+1/2) dt
 
+		// heat propagation
 		p->temp += p->temp_eval *m_DT;
-
 		p->temp_eval = 0.0;
 
-
+		// Update angular momentum  L = L + torque*dt;
+		p->angular_momentum += p->torque*m_DT;
+		
 		if ( m_Param[CLR_MODE]==1.0 ) {
 			adj = fabs(vnext.x)+fabs(vnext.y)+fabs(vnext.z) / 7000.0;
 			adj = (adj > 1.0) ? 1.0 : adj;
@@ -515,7 +547,7 @@ void FluidSystem::AddVolume ( Vector3DF min, Vector3DF max, float spacing,VoxelG
 	std::cout << "count " <<count << std::endl;
 }
 
-void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cube
+void FluidSystem::SPH_CreateExample ( int n, int nmax )  //currently creates a cube
 {
 	Vector3DF min, max;
 
@@ -571,6 +603,16 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
     Fluid* f;
 	Vector3DF pos;
 
+	// Torque related
+	Vector3DF center = m_Vec [ SPH_INITMIN ];
+	center += m_Vec [ SPH_INITMAX];
+	center *= 0.5;
+	center_of_mass = Vector3(center.x, center.y, center.z);
+
+	// Local torque inertia of each particle
+	float radius = ((float)m_Param[SPH_PRADIUS]);
+	float mass = ((float)m_Param[SPH_PMASS]);
+	local_particle_inertia = Vector3(1.0f,1.0f,1.0f) * (0.4f * mass * radius * radius) * INERTIA_FACTOR;
 
 	float cell_size = m_Param[SPH_SMOOTHRADIUS]*2.0;			// Grid cell size (2r)
 	Grid_Setup ( m_Vec[SPH_VOLMIN], m_Vec[SPH_VOLMAX], m_Param[SPH_SIMSCALE], cell_size, 1.0 ); // Setup grid
@@ -581,6 +623,22 @@ void FluidSystem::SPH_CreateExample ( int n, int nmax ) //currently creates a cu
 	vmin -= Vector3DF(2,2,2);
 	vmax =  m_Vec[SPH_VOLMAX];
 	vmax += Vector3DF(2,2,-2);
+}
+
+Matrix3 FluidSystem::ComputeInverseInertia(const Fluid* p) {
+	Vector3 diagonal = Vector3(1/local_particle_inertia.x, 
+		                       1/local_particle_inertia.y,
+							   1/local_particle_inertia.z);
+	Matrix3 local_inverse = Matrix3::ZERO;
+	local_inverse[0][0] = diagonal.x;
+	local_inverse[1][1] = diagonal.y;
+	local_inverse[2][2] = diagonal.z;
+
+	Matrix3 rotation;
+	p->m_transformation.extract3x3Matrix(rotation);
+	
+	return rotation.Transpose() * local_inverse * rotation;
+
 }
 
 // Compute Pressures - Using spatial grid, and also create neighbor table
@@ -680,7 +738,7 @@ void FluidSystem::SPH_ComputeForceGridNC ()
     Vector3DF anti_grav;
     
     // Checking the boundary
-    double diff, adj;
+    double diff_dist, adj;
 	double stiff = m_Param[SPH_EXTSTIFF];
 	double damp = m_Param[SPH_EXTDAMP];
 	double radius = m_Param[SPH_PRADIUS];
@@ -692,54 +750,152 @@ void FluidSystem::SPH_ComputeForceGridNC ()
     Vector3DF norm;
 	Vector3DF min = m_Vec[SPH_VOLMIN];
 	Vector3DF max = m_Vec[SPH_VOLMAX];
+	Vector3DF dist;
+	Vector3DF diff;
+	anti_gravity.Set(0.0f, 0.0f, 0.0f);
 
 	// Calculate the anti-gravity force
     for( dat2 = mBuf[0].data; dat2 < dat1_end; dat2 += mBuf[0].stride) {
     	// Z-axis walls
         p = (Fluid*) dat2;
-		diff = 2 * radius - ( p->pos.z - min.z - (p->pos.x - m_Vec[SPH_VOLMIN].x) * m_Param[BOUND_ZMIN_SLOPE] )*ss;
-		if (diff > EPSILON && p->state == SOLID) {			
+		diff_dist = 2 * radius - ( p->pos.z - min.z - (p->pos.x - m_Vec[SPH_VOLMIN].x) * m_Param[BOUND_ZMIN_SLOPE] )*ss;
+		if (diff_dist > EPSILON && p->state == SOLID) {			
 			norm.Set ( -m_Param[BOUND_ZMIN_SLOPE], 0, 1.0 - m_Param[BOUND_ZMIN_SLOPE] );
-			adj = stiff * diff - damp * norm.Dot ( p->vel_eval );
+			adj = stiff * diff_dist - damp * norm.Dot ( p->vel_eval );
             anti_gravity = norm;
             anti_gravity *= adj;
             anti_gravity /= m_Param[SPH_PMASS];
             touch_ground = true;
 			break;
 		}
+		diff_dist = 2 * radius - ( max.z - p->pos.z )*ss;
+		if (diff_dist > EPSILON && p->state == SOLID) {
+			norm.Set ( 0, 0, -1 );
+			adj = stiff * diff_dist - damp * norm.Dot ( p->vel_eval );
+			anti_gravity = norm;
+			anti_gravity *= adj;
+			anti_gravity /= m_Param[SPH_PMASS];
+			touch_ground = true;
+			break;
+		}
     }
+
+	Vector3DF force_x;
+	for( dat2 = mBuf[0].data; dat2 < dat1_end; dat2 += mBuf[0].stride) {
+		// X-axis walls
+		p = (Fluid*) dat2;
+		if ( !m_Toggle[WRAP_X] ) {
+			diff_dist = 2 * radius - ( p->pos.x - min.x + (sin(m_Time*10.0)-1+(p->pos.y*0.025)*0.25) * m_Param[FORCE_XMIN_SIN] )*ss;	
+			if (diff_dist > EPSILON && p->state == SOLID) {
+				norm.Set ( 1.0, 0, 0 );
+				adj = (m_Param[ FORCE_XMIN_SIN ] + 1) * stiff * diff_dist - damp * norm.Dot ( p->vel_eval ) ;
+				force_x = norm;
+				force_x *= adj;
+				force_x /= m_Param[SPH_PMASS];
+				anti_gravity += force_x;
+				touch_ground = true;
+				break;
+			}
+			diff_dist = 2 * radius - ( max.x - p->pos.x + (sin(m_Time*10.0)-1) * m_Param[FORCE_XMAX_SIN] )*ss;	
+			if (diff_dist > EPSILON && p->state == SOLID) {
+				norm.Set ( -1, 0, 0 );
+				adj = (m_Param[ FORCE_XMAX_SIN ]+1) * stiff * diff_dist - damp * norm.Dot ( p->vel_eval );
+				force_x = norm;
+				force_x *= adj;
+				force_x /= m_Param[SPH_PMASS];
+				anti_gravity += force_x;
+				touch_ground = true;
+				break;
+			}
+		}  // END IF TOGGLE WRAP_X
+	}  // END FOR LOOP
+
+	Vector3DF force_y;
+	for( dat2 = mBuf[0].data; dat2 < dat1_end; dat2 += mBuf[0].stride) {
+		// Y-axis walls
+		p = (Fluid*) dat2;
+		diff_dist = 2 * radius - ( p->pos.y - min.y )*ss;			
+		if (diff_dist > EPSILON && p->state == SOLID) {
+			norm.Set ( 0, 1, 0 );
+			adj = stiff * diff_dist - damp * norm.Dot ( p->vel_eval );
+			force_y = norm;
+			force_y *= adj;
+			force_y /= m_Param[SPH_PMASS];
+			anti_gravity += force_y;
+			touch_ground = true;
+			break;
+		}
+		diff_dist = 2 * radius - ( max.y - p->pos.y )*ss;
+		if (diff_dist > EPSILON && p->state == SOLID) {
+			norm.Set ( 0, -1, 0 );
+			adj = stiff * diff_dist - damp * norm.Dot ( p->vel_eval );
+			force_y = norm;
+			force_y *= adj;
+			force_y /= m_Param[SPH_PMASS];
+			anti_gravity += force_y;
+			touch_ground = true;
+			break;
+		}
+	}  // END FOR LOOP
+
+
 
 	// Calculate the ice-water force
 	i = 0;
+	double z_ice_force;
+	bool liquid = false;
 	for ( dat2 = mBuf[0].data; dat2 < dat1_end; dat2 += mBuf[0].stride, ++i) {
 		p = (Fluid*) dat2; 
 		if (p->state == SOLID) {
 			for (int j = 0; j < m_NC[i]; ++j) {
 				pcurr = (Fluid*) (mBuf[0].data + m_Neighbor[i][j]*mBuf[0].stride);
 				if (pcurr->state == LIQUID){
-					Vector3DF dist = pcurr->pos;
+					dist = pcurr->pos;
 					dist -= p->pos;
 					float length  = dist.Length();
 					dist /= (length * length);
 
 					ice_force.x += ICE_WATER * K_ICE * dist.x;
 					ice_force.y += ICE_WATER * K_ICE * dist.y;
-					ice_force.z += ICE_WATER * K_ICE * dist.z;
+					z_ice_force += ICE_WATER * K_ICE * dist.z;
+					//ice_force.z += ICE_WATER * K_ICE * dist.z;
+					liquid = true;
 				}
 			}  // END OF FINDING NEIGHBOR FOR-LOOP 
 		}  // END OF IF P->STATE IS SOLID
 	}  // EBD OF PARTICLE FOR-LOOP 	
-
+	if (liquid) {
+		if (!touch_ground) {
+			double anti_g = 9.8 /(m_Param[SPH_PMASS]);
+			if (z_ice_force > 0 && z_ice_force <= BOUND_LIQUID) {
+				//std::cout << "GREATER FORCE " << std::endl;
+				ice_force.z = anti_g - z_ice_force; //- 500;
+			} else {
+				//std::cout << "Ice _force " << z_ice_force << std::endl;
+				ice_force.z = anti_g - BOUND_LIQUID; //force.z;
+			}
+			// ice_force.z -= force_z;
+		}
+	}
+	// std::cout <<"ice force y " << ice_force.y << std::endl;
+	// ice_force.z -= 700;
+	//std::cout << "Force_z " << ice_force.z << std::endl;
+	//ice_force.z *= 1E-100000;
+	//ice_force.z = 0.0;
+	//ice_force.y = 0.0;
+	//ice_force.x = 0.0;
 	i = 0;
     for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride, i++ ) {
         // reset all instance variables
 		p = (Fluid*) dat1;
+		force.Set (0, 0, 0);
         if (touch_ground && p->state == SOLID) {
-            force.Set(anti_gravity.x, anti_gravity.y, anti_gravity.z);
+			force.Set(anti_gravity.x, anti_gravity.y, anti_gravity.z);
 			force += ice_force;
-        } else {
-            force.Set (0, 0, 0);
-        }
+        } else if (p->state == SOLID) {
+			force += ice_force;  
+        } 
+
         
 		neighbor_temp = 0.0; sa = 0.0; Qi = 0.0;
         pi = p->index.x;
@@ -761,7 +917,7 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 
             vterm = m_LapKern * visc; 
 
-            Vector3DF diff = p->pos; // distance between particle and its neighbor
+            diff = p->pos; // distance between particle and its neighbor
             diff -= pcurr->pos;
             length = diff.Length();
 
@@ -772,7 +928,7 @@ void FluidSystem::SPH_ComputeForceGridNC ()
 			// Calculate interfacial force 
             if (p->state == LIQUID) {
 					
-				Vector3DF dist = pcurr->pos;
+				dist = pcurr->pos;
 				dist -= p->pos;
 				float length  = dist.Length();
 				dist /= (length * length);
@@ -829,6 +985,48 @@ void FluidSystem::SPH_ComputeForceGridNC ()
             if (pk - 1 > 0) vgrid->adj[pi][pj][pk-1]--;
             p->state = LIQUID;
 		}
+	}
+}
+
+void FluidSystem::ComputeAngularVelocity(){
+	// Loop through all the ice particles
+	char* dat1, *dat1_end;
+	int i = 0;
+	Fluid *p, *pcurr;
+	dat1_end = mBuf[0].data + NumPoints()*mBuf[0].stride;
+	Vector3DF neighbor_force;  // summation of the neighbor force both fluid and liquid
+	Vector3 dist;  // distance from particle i to center of mass
+
+	// Calculate torque
+	for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride, i++ ) {
+		p = (Fluid*) dat1;
+		if (p->state == SOLID){
+			neighbor_force.Set(0.0,0.0,0.0);
+			for (int j=0; j < m_NC[i]; j++ ) { 
+				// Loop through all neighbors
+				pcurr = (Fluid*) (mBuf[0].data + m_Neighbor[i][j]*mBuf[0].stride);
+				neighbor_force += pcurr->sph_force;
+			}  // END OF NEIGHBOR FOR LOOP
+			dist = Vector3(p->pos.x, p->pos.y, p->pos.z);
+			dist -= center_of_mass;
+			
+			p->torque = dist.crossProduct(Vector3(neighbor_force.x, neighbor_force.y, neighbor_force.z));
+			//if (p->torque.x !=0 || p->torque.y !=0 || p->torque.z !=0)
+			//std::cout << "torque " << p->torque.x << " " << p->torque.y << " " << p->torque.z << std::endl;
+		}  // END OF IF p->state is SOLID
+	}  // END OF PARTICLE FOR LOOP
+
+	// Calculate angular velocity
+	Vector3 p_position;
+	Vector3 delta_omega;
+
+	for ( dat1 = mBuf[0].data; dat1 < dat1_end; dat1 += mBuf[0].stride) {
+		p = (Fluid*) dat1;
+		if (p->state == SOLID) {
+			p_position = Vector3(p->pos.x, p->pos.y, p->pos.z);
+			delta_omega = ComputeInverseInertia(p) * (p->angular_momentum);
+			p->angular_velocity = delta_omega;
+		}  // END OF IF p->state is SOLID
 	}
 }
 

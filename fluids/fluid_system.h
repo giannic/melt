@@ -23,13 +23,15 @@
 
 #ifndef DEF_FLUID_SYS
 	#define DEF_FLUID_SYS
-
+    #define M_PI 3.14159265
+    #include <algorithm>
 	#include <iostream>
 	#include <vector>
 	#include <stdio.h>
 	#include <stdlib.h>
 	#include <math.h>
-#include <limits>
+    #include <limits> 
+    #include "OgreMath.h"
 
 	#include "../voxel_grid.h"
 	#include "point_set.h"
@@ -37,7 +39,7 @@
     #include "../my_defs.h"
 	#include "marchcubes.h"
 
-	
+    
 	// Scalar params
 	#define SPH_SIMSIZE			4
 	#define SPH_SIMSCALE		5
@@ -100,6 +102,10 @@
 		void SPH_ComputePressureGrid ();			// O(kn) - spatial grid
 		void SPH_ComputeForceGridNC ();				// O(cn) - neighbor table
 		
+		// Calcualte torque for each ice particle 
+		Matrix3 ComputeInverseInertia(const Fluid* p);
+		void ComputeAngularVelocity();
+
         //void SPH_BuildVoxels ();                    // build voxel grid for rendering
 
 		VoxelGrid* vgrid;
@@ -113,9 +119,12 @@
 		IsoSurface* m_surface;
         bool on_ground;
         Vector3DF anti_gravity;
-    private:
+		Vector3 center_of_mass;  // Approximation of center of mass of an object using center of the bounding box
+		Vector3 local_particle_inertia;    // Inertia of the object
+
+	private:
 		// Smoothed Particle Hydrodynamics
-		double						m_R2, m_Poly6Kern, m_LapKern, m_SpikyKern;		// Kernel functions
+		double m_R2, m_Poly6Kern, m_LapKern, m_SpikyKern;		// Kernel functions
 		
 	};
 

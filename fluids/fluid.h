@@ -22,7 +22,8 @@
 
 #ifndef DEF_FLUID
 	#define DEF_FLUID
-	
+    #define M_PI 3.14159265
+	#include "OgreMath.h"
 	#include "vector.h"
 
 	#include "../my_defs.h"		
@@ -46,8 +47,11 @@
 		float			temp_eval;
         Status          state;          // true for solid, false for liuqid
         float           mass;
-        bool            anti_grav;
-        bool            on_ground;
+        
+		Vector3         torque;
+		Vector3         angular_velocity; 
+		Vector3         angular_momentum;
+		Matrix4         m_transformation;
 
 	};
 
