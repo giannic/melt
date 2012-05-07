@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+
+<head>
+    <title>Ice Melting | CIS563</title>
+    <link type="text/css" rel="stylesheet" href="css/style.css"/>
+</head>
+
+<body>
+    <div id="top"></div>
+    <div id="main">
+        <h1 id="heading">Ice Melting&nbsp&nbsp<span class="sub-heading">Implementation and Results</span></h1>
+        <h6 class="author">Gianni Chen &nbsp&nbsp Kanchalai Suveepattananont</h6>
+        <h2 class="section-heading">Table of Contents</h2>
+        <ol id="toc" class="content">
+            <li>Introduction</li>
+            <li>Implementation</li>
+            <li>Results</li>
+            <li>References</li>
+        </ol>
+
+        <h2 class="section-heading">I. Introduction</h2>
+        <p class="content">
+            In this project, we implemented an ice melting simulation using Smoothed-Particle Hydrodynamics, a lagrangian method. We focused on the heat transfer and forces between particles to achieve a more physically accurate effect. Both of these need to be considered between ice to ice, ice to water, and water to water particles. The environment also contributes to heat. To visualize our results, we used marching cubes to create a polygon mesh and rendered the sequence in Autodesk Maya. This project was an outcome from the Physically Based Animation course at UPenn with Joseph Kider.
+        </p>
+
+        <h2 class="section-heading">II. Implementation</h2>
+        <p class="content">
+        We built our simulation using [IUDN10] as our main reference paper and Rama Hoetzlein's Fluid V2 as a code base.<br/><br/>
+        Heat Transfer <br/>
+        [IUDN10] uses a general heat transfer equation and expands on it for special cases.
+        <img class="equation" src="img/heat_transfer_equation.png"/>
+
+        Ice to Ice Interaction <br/>
+        The ice to ice particle interactions are based on a voxel grid. The main purpose of this grid is to check for directly adjacent ice particles. Of the six adjacent cells for each ice particle, each face that has a neighbor will be affected by the by them for heat transfer.<br/><br/>
+
+        Air to Ice Interaction <br/>
+        The voxel grid is also used to calculate the ambient temperature's impact on the ice particles. The surface area exposed to air is calculated for each particle and combined with the difference in temperature between that particle and the air to decide the change in temperature. The h term here is thermal conductivity.
+        <img class="equation" src="img/air_ice_equation.png"/>
+
+        Water to Ice Interaction <br/>
+        The main interaction between water and ice is the interfacial forces.
+        <img class="equation" src="img/interfacial_tension.png"/>
+        Also, water particles exert a force on the ice block which causes it to shift around the environment. The transfer of heat between water and ice particles are the same as water to water particles and use the same thermal conductivity constant for both ice and water.<br/><br/>
+
+        Water to Water Interaction <br/>
+        The Navier-Stokes equations stand at the core of our water particle motions. Water to water particle interactions base their pressure and viscosity calculations on the original base code.
+        <img class="equation" src="img/navier_stokes.png"/>
+        However, heat transfer occurs by checking the neighbor arrays, not in the voxel grid, of each particle and is governed by the first equation above.<br/><br/>
+
+        Marching Cubes <br/>
+        We adopted part of the marching cube code from Terry Kaleas's senior project and made modifications to fit the ways our particles interacted. Marching cubes traverses over a volume and generates the surface by checking the cases a each point in the volume. We used this purely to output an object to render in Maya.<br/><br/>
+
+        In summary, the above types of forces and heat transfers allow for an accurate simulation of melting ice. Most calculations are local to a single particle and its neighbors, but result in affecting the entire ice block. One thing we attempted to implement was torque, but because of the way we approached gravity on our ice models, we were unsuccessful with torque.
+        </p>
+
+        <h2 class="section-heading">III. Results</h2>
+
+        <h2 class="section-heading">IV. References</h2>
+        <ul class="content list">
+            <li>[IUDN10] K. Iwasaki, H. Uchida, Y.Dobashi, T. Nishita, "Fast Particle-based Visual Simulation of Ice Melting," Computer Graphics Forum (PG 2010).</li>
+            <li>[MCG03] M. Muller, D. Charypar, M. Gross, "Particle-Based Fluid Simulation for Interactive Applications," Eurographics/SIGGRAPH Symposium on Computer Animation (SIGGRAPH 2003).</li>
+            <li>[PPLT06] A. Paiva, F Petronetto, T. Lewiner, G. Tavares, "Particle-based non-Newtonian fluid animation for melting objects," XIX Brazilian Symposium on Computer Graphics and Image Processing (SIBGRAPI 2006).</li>
+            <li>R. Bridson, M. Fischer, "Fluid Simulation SIGGRAPH 2007 Course Notes," SIGGRAPH Course (SIGGRAPH 2007).</li>
+        </ul>
+    </div>
+</body>
+
+</html>
